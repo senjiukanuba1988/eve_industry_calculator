@@ -1,0 +1,8 @@
+{
+  "name": "recipe_management",
+  "summary": "Design the data model and build CRUD for recipes (manufacturing, reactions, PI) so they persist in the backend.",
+  "description": "Recipes are mostly static reference data (e.g. Robotics <- Consumer Electronics + Mechanical Parts, or Tungsten Carbide reaction batches) that need to be entered once and edited occasionally. This goal covers designing a data model flexible enough to represent single-step mineral manufacturing, multi-tier PI chains (P1/P2/P3), and moon-goo reaction chains with batch outputs, plus the backend API and frontend UI to create, edit, and delete recipes. Done when a recipe like the Robotics or Tungsten Carbide examples can be entered, edited, and deleted through the app and persists across restarts.",
+  "status": "active",
+  "created": "2026-07-05",
+  "key_decisions": []
+}

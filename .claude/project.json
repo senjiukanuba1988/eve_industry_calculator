@@ -1,0 +1,21 @@
+{
+  "name": "eve_industry_calculator",
+  "summary": "Calculator for EVE Online industry that explodes T2/PI/reaction recipes down to base materials, with hangar-aware netting.",
+  "description": "Helps calculate what materials are needed to produce advanced items in EVE Online (mainly Tech 2 items, but also covers the PI and moon-goo reaction chains that feed into them). T2 blueprints require many different material types across several tiers: base minerals (e.g. Tritanium, Morphite) are used directly in single-step manufacturing (e.g. Acolyte I drones, R.A.M. Robotics); Planetary Industry products form a P1 -> P2 -> P3 chain (each P2 made from 2 P1 basic materials, each P3 made from 2-3 P2 products, e.g. Robotics <- Consumer Electronics + Mechanical Parts); and moon-goo reaction chains produce things like Laser Focusing Crystals through their own multi-step batch reactions (e.g. Tungsten Carbide batches of 10000 <- Sulfuric Acid + Rolled Tungsten Alloy + Nitrogen Fuel Blocks, each of those built from further reactions). The app has three core use cases: (1) enter/edit recipes so they persist in the backend (recipes are mostly static reference data), (2) pick a recipe and a quantity to produce and get the fully recursive list of base materials required, first as a flat total and later as a step-by-step build plan showing what to craft at each tier, and (3) copy in the contents of your hangar so the calculator nets off materials/intermediates you already have at every tier (e.g. if you need 10 Robotics but have 4, it only asks for the Reactive Metals/Consumer Electronics needed for the remaining 6, and lets you reuse partially-built intermediates from earlier steps).\n\nArchitecture: 4 Docker containers - Angular frontend (most business logic: BOM explosion, netting math lives here), PHP backend (kept small, mainly persistence/API for recipes and hangar data; framework TBD), MySQL database, and Adminer for DB inspection/administration. Deeper details (DB schema, API shape, recipe data model) are to be worked out when the relevant goals are tackled.",
+  "status": "active",
+  "created": "2026-07-05",
+  "key_decisions": [
+    {
+      "decision": "4-container Docker setup: Angular frontend, PHP backend, MySQL database, Adminer.",
+      "rationale": "Keeps concerns separated and gives easy DB inspection via Adminer without building custom admin tooling."
+    },
+    {
+      "decision": "Most business logic (BOM explosion, netting calculations) lives in the Angular frontend; the PHP backend stays small and is mainly responsible for persistence/API of recipes and hangar data.",
+      "rationale": "User's stated preference - backend framework choice is deliberately left open/TBD since the backend's scope is intentionally minimal."
+    },
+    {
+      "decision": "Exclude files/directories not relevant to the project itself via .gitignore - IDE metadata (e.g. PHPStorm's .idea/) and third-party libraries/dependency directories (e.g. vendor/, node_modules/).",
+      "rationale": "Keeps the repository focused on project source; machine/user-specific and reproducible/installable files shouldn't be tracked."
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Goal",
+  "type": "object",
+  "required": ["name", "summary", "description", "status", "created"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Must match the directory name exactly (e.g. 'create_start_menu')"
+    },
+    "summary": {
+      "type": "string",
+      "description": "One-line summary of the goal"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of what we want to achieve"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "on_hold", "completed"]
+    },
+    "created": {
+      "type": "string",
+      "format": "date"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date",
+      "description": "Set when status is changed to 'completed'"
+    },
+    "additional_files": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Paths to goal-specific files beyond goal.json and tasks.json"
+    },
+    "key_decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["decision", "rationale"],
+        "additionalProperties": false,
+        "properties": {
+          "decision":  { "type": "string" },
+          "rationale": { "type": "string" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "material_summary",
+  "summary": "Pick a recipe and a quantity to produce, and get the fully recursive flat list of base materials needed.",
+  "description": "Core use case: given a target recipe (e.g. Acolyte II drones) and a desired output quantity, recursively explode the recipe tree down through all intermediate tiers (T2 components, PI P3/P2/P1 products, reaction chain products) to a flat summary of root base materials (e.g. minerals like Tritanium, and other non-decomposable inputs). Must correctly handle batch sizes/yields that aren't 1:1 (e.g. 10000-unit reaction batches, 5-unit PI outputs). Done when the flat total for a multi-tier recipe like Acolyte II drones is computed correctly.",
+  "status": "active",
+  "created": "2026-07-05",
+  "key_decisions": []
+}

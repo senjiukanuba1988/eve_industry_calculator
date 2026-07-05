@@ -1,0 +1,52 @@
+{
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Write Dockerfile for Angular frontend",
+      "description": "Create a Dockerfile for the Angular frontend suitable for local development (dev build, served appropriately).",
+      "status": "todo",
+      "priority": "medium",
+      "created": "2026-07-05"
+    },
+    {
+      "id": 2,
+      "title": "Write Dockerfile for PHP backend",
+      "description": "Create a Dockerfile for the PHP backend.",
+      "status": "todo",
+      "priority": "medium",
+      "created": "2026-07-05"
+    },
+    {
+      "id": 3,
+      "title": "Set up MySQL container",
+      "description": "Set up a MySQL container with initial config and a volume for persistence.",
+      "status": "todo",
+      "priority": "medium",
+      "created": "2026-07-05"
+    },
+    {
+      "id": 4,
+      "title": "Add Adminer container",
+      "description": "Add an Adminer container wired to the MySQL container for DB inspection/administration.",
+      "status": "todo",
+      "priority": "medium",
+      "created": "2026-07-05"
+    },
+    {
+      "id": 5,
+      "title": "Write docker-compose.yml",
+      "description": "Write a docker-compose.yml tying all four services together (networking, env vars, ports).",
+      "status": "todo",
+      "priority": "medium",
+      "created": "2026-07-05"
+    },
+    {
+      "id": 6,
+      "title": "Verify end-to-end connectivity",
+      "description": "Verify frontend is reachable, backend is reachable, backend can connect to MySQL, and Adminer can connect to MySQL.",
+      "status": "todo",
+      "priority": "medium",
+      "created": "2026-07-05"
+    }
+  ]
+}

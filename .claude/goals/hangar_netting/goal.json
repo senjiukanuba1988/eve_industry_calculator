@@ -1,0 +1,8 @@
+{
+  "name": "hangar_netting",
+  "summary": "Import hangar contents and net them against requirements at every tier, propagating leftover intermediates down the tree.",
+  "description": "Lets the user paste/enter their hangar contents so the calculator subtracts what's already owned from what's needed at every tier of the build plan, not just the final product - e.g. if 10 Robotics are needed but 4 are already in the hangar, only the Reactive Metals/Consumer Electronics for the remaining 6 are requested. Also handles reusing partially-built intermediates from earlier steps (e.g. use 5 Acolyte I already built plus 5 more crafted in this run). Done when the worked example from the interview (partial Robotics in hangar reduces Reactive Metals needed) works end to end.",
+  "status": "active",
+  "created": "2026-07-05",
+  "key_decisions": []
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Tasks",
+  "type": "object",
+  "required": ["tasks"],
+  "additionalProperties": false,
+  "properties": {
+    "next_session_suggestions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Suggestions to consider tackling in the next session"
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "description", "status", "priority", "created"],
+        "additionalProperties": false,
+        "properties": {
+          "id":           { "type": "integer", "description": "Unique within this tasks.json" },
+          "title":        { "type": "string" },
+          "description":  { "type": "string" },
+          "status":       { "type": "string", "enum": ["todo", "in_progress", "done", "blocked"] },
+          "priority":     { "type": "string", "enum": ["low", "medium", "high"] },
+          "created":      { "type": "string", "format": "date" },
+          "completed_at": { "type": "string", "format": "date" },
+          "notes":        { "type": "string" }
+        }
+      }
+    }
+  }
+}

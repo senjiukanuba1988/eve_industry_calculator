@@ -1,0 +1,8 @@
+{
+  "name": "build_steps_breakdown",
+  "summary": "Show the intermediate build steps/plan (what to craft at each tier), not just the flat material total.",
+  "description": "Builds on material_summary by presenting a step-by-step build plan/diagram: e.g. 'use 8000 Tritanium (+ others) to make 10 Acolyte I drones' and 'use 4000 Tritanium (+ others) to make 10 R.A.M. Robotics', continuing up through every tier to the final product. Done when a multi-tier recipe produces a readable ordered list/diagram of build steps rather than just a flat totals list.",
+  "status": "active",
+  "created": "2026-07-05",
+  "key_decisions": []
+}
