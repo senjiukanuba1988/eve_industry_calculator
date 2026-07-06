@@ -1,0 +1,8 @@
+{
+    "name": "eve/industry-backend",
+    "type": "project",
+    "require": {
+        "slim/slim": "^4",
+        "slim/psr7": "^1"
+    }
+}

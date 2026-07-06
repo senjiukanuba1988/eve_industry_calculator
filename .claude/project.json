@@ -16,6 +16,18 @@
     {
       "decision": "Exclude files/directories not relevant to the project itself via .gitignore - IDE metadata (e.g. PHPStorm's .idea/) and third-party libraries/dependency directories (e.g. vendor/, node_modules/).",
       "rationale": "Keeps the repository focused on project source; machine/user-specific and reproducible/installable files shouldn't be tracked."
+    },
+    {
+      "decision": "PHP backend uses Slim Framework (routing + PSR-7 request/response, JSON in/out) with PDO for MySQL persistence, rather than plain PHP or a full-stack framework like Symfony/Laravel.",
+      "rationale": "User is familiar with Symfony but wanted something lighter for a pure JSON API with no bundles/DI container/scaffolding - fits the existing decision to keep the backend intentionally minimal."
+    },
+    {
+      "decision": "Source lives in two top-level directories: frontend/ (Angular app) and backend/ (PHP app), not nested under an apps/ folder.",
+      "rationale": "Simple two-app monorepo layout; decided during docker_setup since both Dockerfiles and docker-compose.yml reference these paths directly."
+    },
+    {
+      "decision": "Docker commands (docker run, docker compose ...) must be prefixed with MSYS_NO_PATHCONV=1 when run from Git Bash on Windows.",
+      "rationale": "Git Bash rewrites POSIX-looking paths (e.g. /app used as a container path or working directory) into Windows paths before they reach Docker, causing errors like \"the working directory 'C:/Program Files/Git/app' is invalid\". This will recur on any future docker command run from this shell."
     }
   ]
 }

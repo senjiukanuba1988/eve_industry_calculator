@@ -1,8 +1,0 @@
-{
-  "name": "docker_setup",
-  "summary": "Set up the four-container Docker environment (Angular frontend, PHP backend, MySQL, Adminer) so the app can run locally.",
-  "description": "Create Dockerfiles and a docker-compose.yml wiring together the Angular frontend, PHP backend, MySQL database, and Adminer. Done when all four containers start up together, the frontend can reach the backend, the backend can reach the database, and Adminer can be used to inspect the database.",
-  "status": "active",
-  "created": "2026-07-05",
-  "key_decisions": []
-}

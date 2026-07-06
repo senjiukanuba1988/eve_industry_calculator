@@ -1,0 +1,8 @@
+{
+  "name": "make_production_ready",
+  "summary": "Revisit setup decisions made loosely for local dev convenience and harden them before any real deployment.",
+  "description": "Several early decisions (mostly from docker_setup) were made for local-dev simplicity and are explicitly not production-grade: a dev-only backend server, hardcoded DB credentials, dev toolchains baked into images, ports exposed directly with no reverse proxy/TLS, a Windows-dev-only Docker workaround, and a directory layout that hasn't been stress-tested at scale. This goal collects each of those loose ends as a task, to be revisited once the app is functionally complete and deployment becomes a real concern. Done when each task has been reviewed and either hardened or explicitly deferred with a note why.",
+  "status": "active",
+  "created": "2026-07-06",
+  "key_decisions": []
+}

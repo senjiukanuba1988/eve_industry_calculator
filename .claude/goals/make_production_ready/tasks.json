@@ -1,0 +1,52 @@
+{
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Review frontend/backend directory layout at scale",
+      "description": "Confirm the flat top-level frontend/ and backend/ layout still fits as the project grows (recipe_management, shared types/utilities, etc.). Revisit if a different structure (e.g. shared/ package, monorepo tooling) becomes necessary.",
+      "status": "todo",
+      "priority": "low",
+      "created": "2026-07-06"
+    },
+    {
+      "id": 2,
+      "title": "Review port exposure and networking for production",
+      "description": "Local dev exposes frontend:4200, backend:8000, mysql:3306, and adminer:8080 directly on the host. For production, put the backend behind a reverse proxy with TLS, don't expose the MySQL port publicly, and reconsider whether Adminer should run at all outside local dev.",
+      "status": "todo",
+      "priority": "medium",
+      "created": "2026-07-06"
+    },
+    {
+      "id": 3,
+      "title": "Replace PHP built-in dev server with a production-grade setup",
+      "description": "backend/Dockerfile currently runs `php -S` (PHP's built-in server), which is fine for local dev but lacks proper concurrency/process management. Replace with PHP-FPM + nginx (or similar) before any real deployment.",
+      "status": "todo",
+      "priority": "high",
+      "created": "2026-07-06"
+    },
+    {
+      "id": 4,
+      "title": "Move DB credentials out of docker-compose.yml",
+      "description": "MySQL root/user passwords are currently hardcoded directly in docker-compose.yml for local dev convenience. Before production, source these from a .env file (excluded from version control) or a proper secrets manager, and use strong generated passwords rather than 'root'/'eve'.",
+      "status": "todo",
+      "priority": "high",
+      "created": "2026-07-06"
+    },
+    {
+      "id": 5,
+      "title": "Confirm no dependency on the Windows/Git-Bash Docker workaround",
+      "description": "Local dev commands on Windows need MSYS_NO_PATHCONV=1 prefixed to docker run/docker compose, or Git Bash mangles container paths like /app into Windows paths. Verify the production build/deploy pipeline (likely Linux-based CI) doesn't depend on this workaround; document it as a Windows-dev-only note if it's still relevant there.",
+      "status": "todo",
+      "priority": "low",
+      "created": "2026-07-06"
+    },
+    {
+      "id": 6,
+      "title": "Use multi-stage Docker builds to slim production images",
+      "description": "backend/Dockerfile installs unzip and git via apt-get solely so Composer can run; these build-time tools shouldn't ship in the final image. frontend/Dockerfile runs the Angular dev server (`ng serve`) with the full node_modules and dev toolchain rather than a production build. Restructure both Dockerfiles as multi-stage builds: build/install in one stage, copy only the built artifacts (compiled PHP app without dev deps; Angular's `ng build` output served via a lightweight web server like nginx) into a slim final image.",
+      "status": "todo",
+      "priority": "medium",
+      "created": "2026-07-06"
+    }
+  ]
+}

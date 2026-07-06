@@ -23,7 +23,7 @@ CLAUDE.md                  # This file
 
 1. Read `.claude/project.json` for overall project context and key decisions.
    - If `name` is `"unnamed_project"` (the placeholder value), the project hasn't been set up yet. Run the **Project Setup Interview** below instead of the rest of this section.
-2. List the subdirectories of `.claude/goals/` — the directory name is the goal name.
+2. List the subdirectories of `.claude/goals/` using a shell directory listing (e.g. `ls .claude/goals`) — the directory name is the goal name. Do not use Glob for this: a bare `.claude/goals/*` glob only matches files, not directories, and will silently return nothing even when goals exist.
 3. Present the list to the user. Wait for the user to pick a goal.
 4. Once a goal is selected, read its full `goal.json` and `tasks.json`.
 5. Present:

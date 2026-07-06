@@ -1,0 +1,26 @@
+{
+  "name": "docker_setup",
+  "summary": "Set up the four-container Docker environment (Angular frontend, PHP backend, MySQL, Adminer) so the app can run locally.",
+  "description": "Create Dockerfiles and a docker-compose.yml wiring together the Angular frontend, PHP backend, MySQL database, and Adminer. Done when all four containers start up together, the frontend can reach the backend, the backend can reach the database, and Adminer can be used to inspect the database.",
+  "status": "completed",
+  "created": "2026-07-05",
+  "completed_at": "2026-07-06",
+  "key_decisions": [
+    {
+      "decision": "Default local dev ports: frontend 4200, backend 8000, MySQL 3306, Adminer 8080.",
+      "rationale": "Standard defaults for each tool, unlikely to conflict with other local services."
+    },
+    {
+      "decision": "Backend dev container runs PHP's built-in server (`php -S`) rather than PHP-FPM + nginx.",
+      "rationale": "Simplest thing that works for local dev and matches the 'keep backend small' philosophy; not production-grade (no proper concurrency/process management) - revisit before deploying, see make_production_ready goal."
+    },
+    {
+      "decision": "MySQL root/user credentials are hardcoded directly in docker-compose.yml rather than sourced from a .env file or secrets manager.",
+      "rationale": "Local-only dev convenience; deliberately not secure and not meant for production - revisit before deploying, see make_production_ready goal."
+    },
+    {
+      "decision": "backend/Dockerfile installs `unzip` and `git` via apt-get before running composer install.",
+      "rationale": "The base php:8.3-cli image lacks zip extension/unzip support, which Composer needs to fetch dist packages; composer install failed without it."
+    }
+  ]
+}
