@@ -1,6 +1,6 @@
 {
   "next_session_suggestions": [
-    "Start implementation with the DB schema/migrations (item_categories, items, recipes, recipe_inputs) since every backend endpoint depends on it."
+    "Backend is now feature-complete for this goal (tasks #1-8 all done). Remaining work is frontend: Recipe List page (#9), Recipe Form incl. manual 'Check Items' resolve flow (#10), Categories page (#11), then an end-to-end pass entering the Robotics and Tungsten Carbide examples (#12). Recommend starting with #10 (Recipe Form) or #9 (Recipe List) depending on which the user wants to see working first - #10 is higher priority and exercises more of the backend (resolve, recipe-types, multi-recipe rule)."
   ],
   "tasks": [
     {
@@ -37,41 +37,49 @@
       "id": 4,
       "title": "Implement DB schema/migrations",
       "description": "Create the item_categories, items, recipes, and recipe_inputs tables per the finalized data model.",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
-      "created": "2026-08-01"
+      "created": "2026-08-01",
+      "completed_at": "2026-08-01",
+      "notes": "Added robmorgan/phinx as the migration tool (backend/phinx.php config, backend/db/migrations/). First migration 20260801141549_create_recipe_management_tables.php creates item_categories, items, recipes, recipe_inputs with NOT NULL/unique/FK constraints matching the schema decision (RESTRICT on category/item deletion while still referenced, CASCADE on recipe_inputs when their parent recipe is deleted). Verified by migrating against the running mysql container and inspecting DESCRIBE/SHOW CREATE TABLE output. Also added a file-based recipe data workflow: scripts/export-recipe-data.sh dumps recipe tables to backend/db/seeds/recipe_data.sql (the committed source of truth, not the Docker volume); a RecipeDataSeeder Phinx seed re-imports it; backend/docker-entrypoint.sh auto-runs migrate+seed on every container start with retry/backoff. Verified end-to-end via docker compose down -v + up. See key_decisions in project.json."
     },
     {
       "id": 5,
       "title": "Implement recipe_type single source of truth + GET /recipe-types",
       "description": "Add the backend config file listing recipe types (t1_industry, t2_industry, reaction, pi) and a GET /recipe-types endpoint that serves it; POST /recipes validation reads from the same file.",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
-      "created": "2026-08-01"
-    },
+      "created": "2026-08-01",
+      "completed_at": "2026-08-01",
+      "notes": "backend/config/recipe_types.php holds [{value, label}] for the 4 types. backend/src/RecipeTypes.php (new App\\ PSR-4 namespace, added to composer.json autoload) reads it: all() for the GET endpoint, values()/isValid() for task #8's future POST /recipes validation to reuse. GET /recipe-types wired in public/index.php, verified via curl. Also uncovered and fixed a Docker gotcha: Compose preserves anonymous volumes across container recreate by default, so refreshing backend/vendor after a composer.json change needs `docker compose up -d --force-recreate --renew-anon-volumes backend`, not just a rebuild - recorded in project.json and README."
     {
       "id": 6,
       "title": "Implement item_categories endpoints",
       "description": "GET /item-categories, POST /item-categories, PATCH /item-categories/{id}, DELETE /item-categories/{id} (reject delete if a category is still referenced by an item).",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
-      "created": "2026-08-01"
-    },
+      "created": "2026-08-01",
+      "completed_at": "2026-08-01",
+      "notes": "Added backend/src/Db.php (shared lazy PDO singleton, reused by future controllers) and backend/src/ItemCategoriesController.php with index/create/update/delete actions, wired in public/index.php. 404 on missing id, 422 on empty name, 409 on duplicate name and on delete-while-referenced-by-an-item (relies on the items.category_id FK's ON DELETE RESTRICT from task #4's migration). Verified all paths via curl against the running backend, including the FK-in-use 409."
     {
       "id": 7,
       "title": "Implement items endpoints incl. resolve-by-name",
       "description": "GET /items (filter by category_id + name search), GET /items/{id}, POST /items, PATCH /items/{id}, DELETE /items/{id} (reject if referenced by any recipe), GET /items/{id}/recipes, and POST /items/resolve (batch name lookup returning matched/unmatched).",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
-      "created": "2026-08-01"
+      "created": "2026-08-01",
+      "completed_at": "2026-08-01",
+      "notes": "backend/src/ItemsController.php: index (category_id + search filters), show, create, update (partial - only touches name/category_id keys present in the payload), delete (409 if referenced by recipes.product_item_id or recipe_inputs.input_item_id via FK RESTRICT), recipes (list recipes for a product item, for task #9's multi-recipe dropdown), resolve (batch name lookup, matched/unmatched per the API decision). category_id validated against item_categories via FK, invalid id surfaces as 422 not a raw DB error. Verified every path via curl including duplicate-name 409, invalid-category 422, partial-update semantics, delete-while-referenced 409, and resolve's matched/unmatched shape."
     },
     {
       "id": 8,
       "title": "Implement recipes endpoints",
       "description": "GET /recipes (filter by recipe_type, product category_id, product name search), GET /recipes/{id} (incl. inputs), POST /recipes, PATCH /recipes/{id} (inputs replaced wholesale), DELETE /recipes/{id}. Enforce the multi-recipe rule: allowed if recipe_type is t2_industry, otherwise reject if a recipe already exists for that product.",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
-      "created": "2026-08-01"
+      "created": "2026-08-01",
+      "completed_at": "2026-08-01",
+      "notes": "backend/src/RecipesController.php: index (recipe_type/category_id/search filters, joins items for product name), show (incl. inputs with resolved input item names), create/update share a validate() method (product_item_id, recipe_type via RecipeTypes::isValid, variant_label/notes null-if-empty, output_quantity>=1, inputs non-empty with per-row validation - no self-referential input, no duplicate input_item_id) and a transactional write (recipe row + wholesale-replaced recipe_inputs, rolled back together on any failure). Multi-recipe rule implemented as: t2_industry creates/edits always allowed; any other type is rejected with 409 if any OTHER recipe already exists for that product_item_id (checked on both create and update, self-excluded on update) - confirmed this correctly allows a product to hold one non-t2 recipe alongside multiple t2 variants simultaneously, matching the decision's literal wording. delete cascades recipe_inputs via the existing FK. Extracted decodeBody/jsonError (previously duplicated in ItemCategoriesController and ItemsController) into a shared JsonResponseHelpers trait used by all three controllers. Verified extensively via curl: full CRUD, multi-recipe accept/reject in both directions, every validation error, list filters, and wholesale input replacement on PATCH."
     },
     {
       "id": 9,

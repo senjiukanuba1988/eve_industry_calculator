@@ -3,6 +3,12 @@
     "type": "project",
     "require": {
         "slim/slim": "^4",
-        "slim/psr7": "^1"
+        "slim/psr7": "^1",
+        "robmorgan/phinx": "^0.16.12"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
     }
 }

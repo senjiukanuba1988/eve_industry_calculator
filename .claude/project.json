@@ -28,6 +28,18 @@
     {
       "decision": "Docker commands (docker run, docker compose ...) must be prefixed with MSYS_NO_PATHCONV=1 when run from Git Bash on Windows.",
       "rationale": "Git Bash rewrites POSIX-looking paths (e.g. /app used as a container path or working directory) into Windows paths before they reach Docker, causing errors like \"the working directory 'C:/Program Files/Git/app' is invalid\". This will recur on any future docker command run from this shell."
+    },
+    {
+      "decision": "DB schema migrations use robmorgan/phinx (backend/phinx.php config, migrations in backend/db/migrations/, applied via `php vendor/bin/phinx migrate -c phinx.php` from inside the backend container). The backend Docker image must be rebuilt (`docker compose build backend`) after adding/updating a composer dependency, since backend/vendor is an anonymous volume that only gets populated from the image on container creation - a plain `docker compose run` after editing composer.json will not see the new package.",
+      "rationale": "User is used to Symfony/Doctrine migrations (PHP classes with up/down, able to run data-manipulation code, not just raw SQL) and wanted the closest equivalent without pulling in a full ORM - Phinx gives that on top of the already-minimal Slim+PDO backend. The rebuild-after-composer-change caveat was discovered when `vendor/bin/phinx` was 'not found' after a `composer require` run inside an ephemeral `docker compose run` container, because that container's anonymous vendor volume was destroyed on exit before the new package could be used."
+    },
+    {
+      "decision": "After any `backend/composer.json` change, rebuilding the image is not enough on its own once a persistent `backend` container has existed before - must also run `docker compose up -d --force-recreate --renew-anon-volumes backend` (not just `--force-recreate`).",
+      "rationale": "Docker Compose preserves a service's anonymous volumes across container recreation by default (a deliberate anti-data-loss behavior, e.g. for accidentally-anonymous DB volumes), so a plain rebuild + restart silently keeps serving the stale pre-change `vendor/`. Discovered when the newly added `App\\` PSR-4 autoload mapping (for task #5's RecipeTypes class) didn't take effect after a full `--no-cache` image rebuild, until `--renew-anon-volumes` was added. The plain-rebuild-is-enough note in the Phinx decision above only held up until backend-1 had been started once as a persistent (non `run --rm`) container - after that, this stronger form applies."
+    },
+    {
+      "decision": "Recipe data (item_categories/items/recipes/recipe_inputs) is persisted as a committed file, not trusted to the `mysql` Docker volume. `scripts/export-recipe-data.sh` dumps those tables to `backend/db/seeds/recipe_data.sql` on demand; a Phinx seed class (`RecipeDataSeeder`) truncates and re-imports from that file if it exists. `backend/docker-entrypoint.sh` runs `phinx migrate` then `phinx seed:run` automatically on every backend container start (with retry/backoff around migrate, since a first-time mysql volume init can briefly report healthy via a temporary bootstrap server before restarting into the real one, causing a connection-refused race).",
+      "rationale": "User considers anything living only inside a Docker volume/container to be volatile - the real source of truth for recipe data must be a file that travels with the git repo, so copying the project to another machine (or wiping the volume) and running `docker compose up` reconstitutes schema + recipe data with zero manual DB steps."
     }
   ]
 }
