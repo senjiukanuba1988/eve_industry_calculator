@@ -1,0 +1,109 @@
+{
+  "next_session_suggestions": [
+    "Start implementation with the DB schema/migrations (item_categories, items, recipes, recipe_inputs) since every backend endpoint depends on it."
+  ],
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Design recipe data model",
+      "description": "Design the item_categories / items / recipes / recipe_inputs schema covering manufacturing, PI, and reaction recipes uniformly.",
+      "status": "done",
+      "priority": "high",
+      "created": "2026-08-01",
+      "completed_at": "2026-08-01",
+      "notes": "See key_decisions in goal.json for the finalized schema."
+    },
+    {
+      "id": 2,
+      "title": "Define recipe API endpoints (queries + usecases)",
+      "description": "Define GET query endpoints and POST/PATCH/DELETE usecase endpoints for item_categories, recipe_types, items (incl. resolve-by-name), and recipes.",
+      "status": "done",
+      "priority": "high",
+      "created": "2026-08-01",
+      "completed_at": "2026-08-01",
+      "notes": "See key_decisions in goal.json for the full endpoint list and the resolve-by-name flow."
+    },
+    {
+      "id": 3,
+      "title": "Design frontend pages/navigation for recipe management",
+      "description": "Design the Recipe List, Recipe Form, and Categories pages, plus the manual item-name resolve UX.",
+      "status": "done",
+      "priority": "medium",
+      "created": "2026-08-01",
+      "completed_at": "2026-08-01",
+      "notes": "See key_decisions in goal.json for page layouts and the manual 'Check Items' resolve trigger decision."
+    },
+    {
+      "id": 4,
+      "title": "Implement DB schema/migrations",
+      "description": "Create the item_categories, items, recipes, and recipe_inputs tables per the finalized data model.",
+      "status": "todo",
+      "priority": "high",
+      "created": "2026-08-01"
+    },
+    {
+      "id": 5,
+      "title": "Implement recipe_type single source of truth + GET /recipe-types",
+      "description": "Add the backend config file listing recipe types (t1_industry, t2_industry, reaction, pi) and a GET /recipe-types endpoint that serves it; POST /recipes validation reads from the same file.",
+      "status": "todo",
+      "priority": "medium",
+      "created": "2026-08-01"
+    },
+    {
+      "id": 6,
+      "title": "Implement item_categories endpoints",
+      "description": "GET /item-categories, POST /item-categories, PATCH /item-categories/{id}, DELETE /item-categories/{id} (reject delete if a category is still referenced by an item).",
+      "status": "todo",
+      "priority": "medium",
+      "created": "2026-08-01"
+    },
+    {
+      "id": 7,
+      "title": "Implement items endpoints incl. resolve-by-name",
+      "description": "GET /items (filter by category_id + name search), GET /items/{id}, POST /items, PATCH /items/{id}, DELETE /items/{id} (reject if referenced by any recipe), GET /items/{id}/recipes, and POST /items/resolve (batch name lookup returning matched/unmatched).",
+      "status": "todo",
+      "priority": "high",
+      "created": "2026-08-01"
+    },
+    {
+      "id": 8,
+      "title": "Implement recipes endpoints",
+      "description": "GET /recipes (filter by recipe_type, product category_id, product name search), GET /recipes/{id} (incl. inputs), POST /recipes, PATCH /recipes/{id} (inputs replaced wholesale), DELETE /recipes/{id}. Enforce the multi-recipe rule: allowed if recipe_type is t2_industry, otherwise reject if a recipe already exists for that product.",
+      "status": "todo",
+      "priority": "high",
+      "created": "2026-08-01"
+    },
+    {
+      "id": 9,
+      "title": "Implement frontend Recipe List page",
+      "description": "Table of recipes with recipe_type/category/name-search filters, Edit/Delete row actions, and a 'New Recipe' entry point.",
+      "status": "todo",
+      "priority": "medium",
+      "created": "2026-08-01"
+    },
+    {
+      "id": 10,
+      "title": "Implement frontend Recipe Form",
+      "description": "Shared create/edit form: recipe_type dropdown, product/input name fields with quantities, manual 'Check Items' resolve button, inline category picker + create button for unmatched items, and Save wired to POST/PATCH /recipes.",
+      "status": "todo",
+      "priority": "high",
+      "created": "2026-08-01"
+    },
+    {
+      "id": 11,
+      "title": "Implement frontend Categories page",
+      "description": "List item_categories with inline rename, delete (surfacing the backend's in-use rejection), and a 'New Category' input.",
+      "status": "todo",
+      "priority": "medium",
+      "created": "2026-08-01"
+    },
+    {
+      "id": 12,
+      "title": "End-to-end test with example recipes",
+      "description": "Enter the Robotics and Tungsten Carbide example recipes through the app and confirm they persist across a restart.",
+      "status": "todo",
+      "priority": "medium",
+      "created": "2026-08-01"
+    }
+  ]
+}
