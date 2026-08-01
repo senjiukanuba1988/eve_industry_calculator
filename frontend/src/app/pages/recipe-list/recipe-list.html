@@ -1,0 +1,76 @@
+<div class="recipe-list">
+  <div class="header">
+    <h1>Recipes</h1>
+    <a class="button primary" routerLink="/recipes/new">New Recipe</a>
+  </div>
+
+  <div class="filters">
+    <label>
+      Type
+      <select [(ngModel)]="recipeTypeFilter" (change)="load()">
+        <option value="">All</option>
+        @for (type of recipeTypes(); track type.value) {
+          <option [value]="type.value">{{ type.label }}</option>
+        }
+      </select>
+    </label>
+
+    <label>
+      Category
+      <select [(ngModel)]="categoryFilter" (change)="load()">
+        <option [ngValue]="null">All</option>
+        @for (category of categories(); track category.id) {
+          <option [ngValue]="category.id">{{ category.name }}</option>
+        }
+      </select>
+    </label>
+
+    <label>
+      Search
+      <input
+        type="text"
+        placeholder="Product name..."
+        [(ngModel)]="searchFilter"
+        (keyup.enter)="load()"
+      />
+    </label>
+
+    <button type="button" (click)="load()">Search</button>
+  </div>
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+
+  @if (loading()) {
+    <p>Loading...</p>
+  } @else if (recipes().length === 0) {
+    <p>No recipes found.</p>
+  } @else {
+    <table>
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Variant</th>
+          <th>Type</th>
+          <th>Output Qty</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (recipe of recipes(); track recipe.id) {
+          <tr>
+            <td>{{ recipe.product_item_name }}</td>
+            <td>{{ recipe.variant_label ?? '-' }}</td>
+            <td>{{ recipeTypeLabel(recipe.recipe_type) }}</td>
+            <td>{{ recipe.output_quantity }}</td>
+            <td class="actions">
+              <button type="button" (click)="editRecipe(recipe.id)">Edit</button>
+              <button type="button" class="danger" (click)="deleteRecipe(recipe)">Delete</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

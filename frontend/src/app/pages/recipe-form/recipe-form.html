@@ -1,0 +1,108 @@
+<div class="recipe-form">
+  <h1>{{ isEdit ? 'Edit Recipe' : 'New Recipe' }}</h1>
+
+  @if (loading()) {
+    <p>Loading...</p>
+  } @else {
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+    }
+
+    <div class="field">
+      <label>Recipe Type</label>
+      <select [(ngModel)]="recipeType">
+        <option value="" disabled>Select a type...</option>
+        @for (type of recipeTypes(); track type.value) {
+          <option [value]="type.value">{{ type.label }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Product</label>
+      <input
+        type="text"
+        placeholder="Item name..."
+        [ngModel]="product().name"
+        (ngModelChange)="onProductNameChange($event)"
+      />
+      @if (product().checked) {
+        @if (product().matched) {
+          <span class="status ok">✓ {{ product().categoryName ?? 'no category' }}</span>
+        } @else {
+          <span class="status unmatched">
+            Not found -
+            <select [ngModel]="product().categoryId" (ngModelChange)="setProductCategory($event)">
+              <option [ngValue]="null">No category</option>
+              @for (category of categories(); track category.id) {
+                <option [ngValue]="category.id">{{ category.name }}</option>
+              }
+            </select>
+            <button type="button" (click)="createProductItem()">Create</button>
+          </span>
+        }
+      }
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Variant Label</label>
+        <input type="text" [(ngModel)]="variantLabel" placeholder="Optional" />
+      </div>
+      <div class="field">
+        <label>Output Quantity</label>
+        <input type="number" min="1" [(ngModel)]="outputQuantity" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Notes</label>
+      <textarea [(ngModel)]="notes" placeholder="Optional" rows="2"></textarea>
+    </div>
+
+    <h2>Inputs</h2>
+    @for (row of inputs(); track $index) {
+      <div class="input-row">
+        <input
+          type="text"
+          placeholder="Item name..."
+          [ngModel]="row.name"
+          (ngModelChange)="onInputNameChange($index, $event)"
+        />
+        <input
+          type="number"
+          min="1"
+          class="qty"
+          [ngModel]="row.quantity"
+          (ngModelChange)="setInputQuantity($index, $event)"
+        />
+        @if (row.checked) {
+          @if (row.matched) {
+            <span class="status ok">✓ {{ row.categoryName ?? 'no category' }}</span>
+          } @else {
+            <span class="status unmatched">
+              Not found -
+              <select [ngModel]="row.categoryId" (ngModelChange)="setInputCategory($index, $event)">
+                <option [ngValue]="null">No category</option>
+                @for (category of categories(); track category.id) {
+                  <option [ngValue]="category.id">{{ category.name }}</option>
+                }
+              </select>
+              <button type="button" (click)="createInputItem($index)">Create</button>
+            </span>
+          }
+        }
+        <button type="button" class="danger" (click)="removeInputRow($index)">Remove</button>
+      </div>
+    }
+    <button type="button" (click)="addInputRow()">+ Add Input</button>
+
+    <div class="actions">
+      <button type="button" (click)="checkItems()">Check Items</button>
+      <button type="button" class="primary" [disabled]="!allResolved || saving()" (click)="save()">
+        Save Recipe
+      </button>
+      <button type="button" (click)="cancel()">Cancel</button>
+    </div>
+  }
+</div>

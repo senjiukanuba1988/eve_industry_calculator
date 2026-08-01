@@ -1,6 +1,6 @@
 {
   "next_session_suggestions": [
-    "Backend is now feature-complete for this goal (tasks #1-8 all done). Remaining work is frontend: Recipe List page (#9), Recipe Form incl. manual 'Check Items' resolve flow (#10), Categories page (#11), then an end-to-end pass entering the Robotics and Tungsten Carbide examples (#12). Recommend starting with #10 (Recipe Form) or #9 (Recipe List) depending on which the user wants to see working first - #10 is higher priority and exercises more of the backend (resolve, recipe-types, multi-recipe rule)."
+    "1_recipe_management is fully complete and moved to completed_goals/. Start 2_material_summary next."
   ],
   "tasks": [
     {
@@ -85,33 +85,41 @@
       "id": 9,
       "title": "Implement frontend Recipe List page",
       "description": "Table of recipes with recipe_type/category/name-search filters, Edit/Delete row actions, and a 'New Recipe' entry point.",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
-      "created": "2026-08-01"
+      "created": "2026-08-01",
+      "completed_at": "2026-08-01",
+      "notes": "Bare Angular scaffold had no HttpClient, routing, or components yet, so this task also laid the shared frontend plumbing: provideHttpClient() in app.config.ts; frontend/proxy.conf.json (dev-server proxies /api/* to http://backend:8000, wired via angular.json serve.options.proxyConfig) so the browser talks same-origin to localhost:4200 and never hits CORS (backend has no CORS middleware); models/recipe.model.ts (RecipeListItem, RecipeType, ItemCategory, RecipeFilters); services/recipes.service.ts, recipe-types.service.ts, item-categories.service.ts. Replaced the placeholder app.html with a minimal top nav (Recipes/Categories links) and added the /recipes route (root redirects to it) in app.routes.ts. RecipeList page (pages/recipe-list/): recipe_type dropdown (from GET /recipe-types) + category dropdown (from GET /item-categories) + product-name search input, all re-querying GET /recipes on change/Enter/Search-click; table of product/variant/type/output-qty with per-row Edit (routerLink-navigates to /recipes/{id}/edit, not implemented until task #10) and Delete (window.confirm then DELETE /recipes/{id} and reload); 'New Recipe' links to /recipes/new (task #10). Verified: `ng build` and `ng test` pass inside the running frontend container; confirmed the proxy end-to-end via curl (localhost:4200/api/recipe-types and a temporary POST'd item+recipe showed up via localhost:4200/api/recipes, then cleaned up). Could not visually verify the rendered page in a real browser - Claude in Chrome was not connected this session - so the user should open http://localhost:4200/recipes to confirm the UI looks/behaves as expected before relying on it."
     },
     {
       "id": 10,
       "title": "Implement frontend Recipe Form",
       "description": "Shared create/edit form: recipe_type dropdown, product/input name fields with quantities, manual 'Check Items' resolve button, inline category picker + create button for unmatched items, and Save wired to POST/PATCH /recipes.",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
-      "created": "2026-08-01"
+      "created": "2026-08-01",
+      "completed_at": "2026-08-01",
+      "notes": "pages/recipe-form/ (RecipeForm), shared by routes recipes/new and recipes/:id/edit (added to app.routes.ts). Added ItemsService (resolve, create) and RecipesService.get/create/update. Each resolvable name (product + each input row) tracked client-side as {name, itemId, checked, matched, categoryId, categoryName}; editing a name text resets it to unresolved (must re-check). 'Check Items' sends one POST /items/resolve with [productName, ...inputNames] and zips the parallel results back by index. Unmatched entries show an inline category select (from GET /item-categories, 'No category' = null) + a 'Create' button -> POST /items, which resolves that entry in place. Save Recipe is disabled until product + every input row is matched; save() also re-checks the same rules the backend enforces (no self-referential input, no duplicate input_item_id, quantities >= 1, recipe_type/output_quantity set) so the user gets an immediate inline message instead of only a round-tripped 422/409 - the backend's own 409 (multi-recipe rule) and any other server error still surface via the error banner (parsed from the {error: message} body JsonResponseHelpers always returns). Edit mode (recipes/:id/edit) GETs the recipe and pre-seeds product/inputs as already-matched (server-given ids trusted) with quantities/variant_label/output_quantity/notes/recipe_type filled in; changing a pre-filled name still forces re-resolution. Verified: `ng build`/`ng test` pass in the running frontend container; curl-verified the exact request/response shapes the component sends and expects (resolve on unmatched names, create, POST /recipes, GET /recipes/{id}, PATCH /recipes/{id}) all match the RecipePayload/RecipeDetail/Item/ItemResolveResult TypeScript models byte-for-byte, then cleaned up the temporary test data. Did not visually exercise the form in a real browser (Claude in Chrome not connected this session) - user should walk through creating and editing a recipe at http://localhost:4200/recipes/new before relying on it."
     },
     {
       "id": 11,
       "title": "Implement frontend Categories page",
       "description": "List item_categories with inline rename, delete (surfacing the backend's in-use rejection), and a 'New Category' input.",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
-      "created": "2026-08-01"
+      "created": "2026-08-01",
+      "completed_at": "2026-08-01",
+      "notes": "pages/categories/ (Categories component), routed at /categories (already linked from the top nav added in task #9). Extended ItemCategoriesService with create/update/delete (list already existed). Simple list: 'New Category' input+button at top (POST, then reload); each row has Rename (inline input replaces the name cell, Save/Cancel) and Delete (window.confirm then DELETE). No client-side duplicate-name or in-use pre-check - the page just surfaces whatever the backend's {error: message} body says (409 duplicate name on create/rename, 409 in-use on delete) via an error banner, same pattern as recipe-form's error handling. Verified: `ng build`/`ng test` pass in the running frontend container; curl-verified create/rename/delete request-response shapes match ItemCategory, and confirmed the in-use delete rejection returns the exact 409 + message the page displays (created a category, attached an item to it, verified delete was rejected, then cleaned up). Did not visually exercise the page in a real browser (Claude in Chrome not connected this session) - user should check http://localhost:4200/categories before relying on it."
     },
     {
       "id": 12,
       "title": "End-to-end test with example recipes",
       "description": "Enter the Robotics and Tungsten Carbide example recipes through the app and confirm they persist across a restart.",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
-      "created": "2026-08-01"
+      "created": "2026-08-01",
+      "completed_at": "2026-08-01",
+      "notes": "User entered three recipes through the live UI (recipe list/form/categories pages all exercised together): Cormorant (t1_industry, Ship category, 4 mineral inputs), Robotics (pi, Planetary Industry Product category, 10 Consumer Electronics + 10 Mechanical Parts -> 3 Robotics - corrected from an initially wrong quantity I proposed), and Tungsten Carbide (reaction, Reaction Product/Material categories, 98 Rolled Tungsten Alloy + 98 Sulfuric Acid -> 10000 - a facility-bonus-adjusted per-run value, see project memory on fractional reaction quantities for why 98 isn't the 'base' game value). Ran scripts/export-recipe-data.sh to snapshot all 4 tables to backend/db/seeds/recipe_data.sql, then did a full `docker compose down -v` (wipes the mysql volume and anonymous frontend/backend volumes) + `docker compose up -d`, and confirmed via curl against every affected endpoint (GET /recipes, /item-categories, and /recipes/{id} for all 3 with full input lists) that ids, names, categories, and quantities came back byte-for-byte identical - the migrate+seed-on-startup flow in docker-entrypoint.sh correctly reconstructs schema and recipe data from the committed file alone. backend/db/seeds/recipe_data.sql is new and currently uncommitted - user should `git add`/commit it (and any future recipe additions need a re-export before they're durable, since the seeder truncates+reimports from that file on every backend container start)."
     }
   ]
 }

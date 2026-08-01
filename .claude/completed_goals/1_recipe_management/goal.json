@@ -2,8 +2,9 @@
   "name": "1_recipe_management",
   "summary": "Design the data model and build CRUD for recipes (manufacturing, reactions, PI) so they persist in the backend.",
   "description": "Recipes are mostly static reference data (e.g. Robotics <- Consumer Electronics + Mechanical Parts, or Tungsten Carbide reaction batches) that need to be entered once and edited occasionally. This goal covers designing a data model flexible enough to represent single-step mineral manufacturing, multi-tier PI chains (P1/P2/P3), and moon-goo reaction chains with batch outputs, plus the backend API and frontend UI to create, edit, and delete recipes. Done when a recipe like the Robotics or Tungsten Carbide examples can be entered, edited, and deleted through the app and persists across restarts.",
-  "status": "active",
+  "status": "completed",
   "created": "2026-07-05",
+  "completed_at": "2026-08-01",
   "key_decisions": [
     {
       "decision": "Recipe data model: `item_categories` (id, name unique) for user-defined item grouping; `items` (id, name unique, category_id FK nullable) - no is_final_product column; `recipes` (id, product_item_id FK to items - not unique, since some products can have multiple recipes, recipe_type enum column [\"t1_industry\", \"t2_industry\", \"reaction\", \"pi\"], variant_label string nullable, output_quantity int default 1, notes text nullable); `recipe_inputs` (id, recipe_id FK, input_item_id FK, input_quantity int, unique(recipe_id, input_item_id)). One generic schema covers manufacturing, PI, and reaction recipes since all are structurally N inputs -> M output units per run.",

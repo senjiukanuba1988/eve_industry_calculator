@@ -40,6 +40,14 @@
     {
       "decision": "Recipe data (item_categories/items/recipes/recipe_inputs) is persisted as a committed file, not trusted to the `mysql` Docker volume. `scripts/export-recipe-data.sh` dumps those tables to `backend/db/seeds/recipe_data.sql` on demand; a Phinx seed class (`RecipeDataSeeder`) truncates and re-imports from that file if it exists. `backend/docker-entrypoint.sh` runs `phinx migrate` then `phinx seed:run` automatically on every backend container start (with retry/backoff around migrate, since a first-time mysql volume init can briefly report healthy via a temporary bootstrap server before restarting into the real one, causing a connection-refused race).",
       "rationale": "User considers anything living only inside a Docker volume/container to be volatile - the real source of truth for recipe data must be a file that travels with the git repo, so copying the project to another machine (or wiping the volume) and running `docker compose up` reconstitutes schema + recipe data with zero manual DB steps."
+    },
+    {
+      "decision": "The Angular dev server proxies API calls itself: `frontend/proxy.conf.json` routes `/api/*` to `http://backend:8000` (stripping the `/api` prefix), wired via `angular.json`'s `serve.options.proxyConfig`. All frontend services call same-origin `/api/...` paths.",
+      "rationale": "The backend has no CORS middleware; since the frontend is only ever run via `docker compose` (where it can reach the backend container by its service name), proxying at the dev server means the browser always talks same-origin to localhost:4200 and never needs CORS at all. Established while building 1_recipe_management's Recipe List page (task #9) and used by every frontend page since."
+    },
+    {
+      "decision": "EVE Online reaction recipes can have facility-bonus-adjusted material consumption per run that isn't an integer (e.g. Tungsten Carbide's base recipe is 100 Rolled Tungsten Alloy + 100 Sulfuric Acid -> 10000 output, but a bonused facility consumes 97.8 of each per run). For now these are entered as the rounded-up-to-integer per-run value (e.g. 98), since `recipe_inputs.input_quantity` is an integer column with no rounding-mode concept.",
+      "rationale": "Rounding up per run is the safe direction (never runs short), and matches how the user actually plans production today. This is a known stopgap, not a permanent fix - it loses precision and doesn't scale correctly for a batch of N runs (round-up-per-run != round-up-once-for-N). Revisit when `2_material_summary`/`3_build_steps_breakdown` implement the actual BOM explosion math: either add float/decimal quantities with explicit rounding semantics, or store the base recipe and facility modifier separately."
     }
   ]
 }

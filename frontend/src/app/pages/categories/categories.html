@@ -1,0 +1,47 @@
+<div class="categories">
+  <h1>Categories</h1>
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+
+  <div class="new-category">
+    <input
+      type="text"
+      placeholder="New category name..."
+      [(ngModel)]="newCategoryName"
+      (keyup.enter)="addCategory()"
+    />
+    <button type="button" (click)="addCategory()">Add Category</button>
+  </div>
+
+  @if (loading()) {
+    <p>Loading...</p>
+  } @else if (categories().length === 0) {
+    <p>No categories yet.</p>
+  } @else {
+    <table>
+      <tbody>
+        @for (category of categories(); track category.id) {
+          <tr>
+            @if (editingId === category.id) {
+              <td>
+                <input type="text" [(ngModel)]="editingName" (keyup.enter)="saveEdit()" />
+              </td>
+              <td class="actions">
+                <button type="button" (click)="saveEdit()">Save</button>
+                <button type="button" (click)="cancelEdit()">Cancel</button>
+              </td>
+            } @else {
+              <td>{{ category.name }}</td>
+              <td class="actions">
+                <button type="button" (click)="startEdit(category)">Rename</button>
+                <button type="button" class="danger" (click)="deleteCategory(category)">Delete</button>
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

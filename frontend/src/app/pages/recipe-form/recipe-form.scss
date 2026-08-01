@@ -1,0 +1,105 @@
+.recipe-form {
+  padding: 1.5rem;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+h2 {
+  margin-top: 1.5rem;
+  font-size: 1.1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.field-row {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.field-row .field {
+  flex: 1;
+}
+
+label {
+  font-size: 0.85rem;
+  color: #444;
+  font-weight: 500;
+}
+
+input,
+select,
+textarea {
+  padding: 0.4rem;
+  font: inherit;
+}
+
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.input-row input[type='text'] {
+  flex: 1;
+}
+
+.input-row input.qty {
+  width: 5rem;
+}
+
+.status {
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.status.ok {
+  color: #1a7f37;
+}
+
+.status.unmatched {
+  color: #9a6700;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+button {
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  border: 1px solid #bbb;
+  background: #fff;
+  border-radius: 4px;
+}
+
+button.primary {
+  background: #2f6fed;
+  border-color: #2f6fed;
+  color: #fff;
+}
+
+button.primary:disabled {
+  background: #9db6ef;
+  border-color: #9db6ef;
+  cursor: not-allowed;
+}
+
+button.danger {
+  border-color: #d33;
+  color: #d33;
+}
+
+.error {
+  color: #d33;
+}
