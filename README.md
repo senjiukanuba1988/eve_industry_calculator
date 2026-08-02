@@ -25,6 +25,12 @@ scripts/export-recipe-data.sh
 
 This dumps `item_categories`, `items`, `recipes`, and `recipe_inputs` into `backend/db/seeds/recipe_data.sql`. Commit that file - it's the actual source of truth for recipe data, not the Docker volume. Re-run the script any time you want to snapshot newly entered recipes; the next container start (or a manual `phinx seed:run`) will pick up the latest export.
 
+Run it from anywhere like this:
+
+```
+& "C:\Program Files\Git\bin\bash.exe" "D:/PHPStormProjects/eve_industry_calculator/scripts/export-recipe-data.sh"
+```
+
 ## Backend DB migrations (Phinx)
 
 Schema changes go in `backend/db/migrations/` as Phinx migration classes. They run automatically on container start, but to run them manually (e.g. from inside the backend container):
