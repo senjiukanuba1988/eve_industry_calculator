@@ -1,3 +1,41 @@
 {
-  "tasks": []
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Backend: recursive BOM explosion endpoint with leftover tracking",
+      "description": "Add a GET /api/recipes/{id}/explode?runs=N endpoint. Single recursive pass per needed item, using a per-item leftover ledger: if existing leftover covers the need, draw it down; otherwise round the shortfall up to whole batches (skip the ceil check entirely when the recipe's output_quantity is 1, since that path never produces leftovers), record the new leftover, and recurse into that recipe's inputs (quantity_needed x batches). Base materials (items with no recipe) accumulate into a flat total. Returns product info, runs, flat base_materials totals, and a flat intermediates list (item_id, recipe_id, total batches run, final leftover_quantity) per distinct intermediate touched anywhere in the tree - order of traversal doesn't affect correctness, so aggregation happens naturally via the shared ledger rather than needing a separate two-pass total-demand computation. Uses existing integer recipe_inputs quantities as-is; the fractional per-run rounding issue is out of scope (see .claude/FUTURE_IMPROVEMENTS.md).",
+      "status": "done",
+      "priority": "high",
+      "created": "2026-08-02",
+      "completed_at": "2026-08-02"
+    },
+    {
+      "id": 2,
+      "title": "Frontend: \"Calculate\" action on recipe list",
+      "description": "Add a Calculate button/action next to each recipe in the filterable recipe list. Clicking it navigates to the calculator page with that recipe preselected (and its recipe_id, disambiguating variants where an item has more than one recipe).",
+      "status": "done",
+      "priority": "medium",
+      "created": "2026-08-02",
+      "completed_at": "2026-08-02"
+    },
+    {
+      "id": 3,
+      "title": "Frontend: calculator page - runs input and results display",
+      "description": "Build the calculator page: shows the preselected recipe, an input for number of runs, a trigger to call the explosion endpoint, and displays the resulting flat base-material totals plus the leftover/excess quantities per intermediate from task 1.",
+      "status": "done",
+      "priority": "medium",
+      "created": "2026-08-02",
+      "completed_at": "2026-08-02"
+    },
+    {
+      "id": 4,
+      "title": "Frontend: item editing page",
+      "description": "Add a page for editing existing items (name, category) - a filterable item list (by name/category, reusing the existing /items search+category_id query params) with inline editing per row, calling PATCH /items/{id}. Backend already supports this; only the frontend page/route is missing. Motivated by needing to fix a miscategorized item while entering real recipe data for this goal's Acolyte II verification, but not specific to material summary - a general item-management gap.",
+      "status": "done",
+      "priority": "medium",
+      "created": "2026-08-02",
+      "completed_at": "2026-08-02"
+    }
+  ],
+  "next_session_suggestions": []
 }

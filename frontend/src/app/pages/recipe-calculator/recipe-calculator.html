@@ -1,0 +1,102 @@
+<div class="recipe-calculator">
+  <div class="header">
+    <h1>Calculate Materials</h1>
+    <a class="button" routerLink="/recipes">Back to Recipes</a>
+  </div>
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+
+  @if (loading()) {
+    <p>Loading...</p>
+  } @else if (recipe()) {
+    <div class="recipe-summary">
+      <div>
+        <span class="label">Product</span>
+        <span>{{ recipe()!.product_item_name }}</span>
+      </div>
+      <div>
+        <span class="label">Variant</span>
+        <span>{{ recipe()!.variant_label ?? '-' }}</span>
+      </div>
+      <div>
+        <span class="label">Type</span>
+        <span>{{ recipeTypeLabel(recipe()!.recipe_type) }}</span>
+      </div>
+      <div>
+        <span class="label">Output Qty per Run</span>
+        <span>{{ recipe()!.output_quantity }}</span>
+      </div>
+    </div>
+
+    <div class="calculate-row">
+      <label>
+        Runs
+        <input type="number" min="1" [(ngModel)]="runs" (keyup.enter)="calculate()" />
+      </label>
+      <button type="button" class="primary" [disabled]="calculating()" (click)="calculate()">
+        Calculate
+      </button>
+    </div>
+
+    @if (calculateError()) {
+      <p class="error">{{ calculateError() }}</p>
+    }
+
+    @if (calculating()) {
+      <p>Calculating...</p>
+    } @else if (result()) {
+      <div class="results">
+        <p class="produced">
+          Produces <strong>{{ result()!.produced_quantity }}</strong> {{ result()!.product_item_name }}
+          from {{ result()!.runs }} run(s).
+        </p>
+
+        <h2>Base Materials</h2>
+        @if (result()!.base_materials.length === 0) {
+          <p>No base materials.</p>
+        } @else {
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Quantity</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (material of result()!.base_materials; track material.item_id) {
+                <tr>
+                  <td>{{ material.item_name }}</td>
+                  <td>{{ material.quantity }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+
+        @if (result()!.intermediates.length > 0) {
+          <h2>Intermediates &amp; Leftovers</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Batches Run</th>
+                <th>Leftover</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (intermediate of result()!.intermediates; track intermediate.item_id) {
+                <tr>
+                  <td>{{ intermediate.item_name }}</td>
+                  <td>{{ intermediate.batches }}</td>
+                  <td>{{ intermediate.leftover_quantity }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+    }
+  }
+</div>

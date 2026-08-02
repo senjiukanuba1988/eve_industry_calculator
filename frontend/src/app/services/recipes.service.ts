@@ -2,7 +2,13 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { RecipeDetail, RecipeFilters, RecipeListItem, RecipePayload } from '../models/recipe.model';
+import {
+  ExplodeResult,
+  RecipeDetail,
+  RecipeFilters,
+  RecipeListItem,
+  RecipePayload,
+} from '../models/recipe.model';
 
 @Injectable({ providedIn: 'root' })
 export class RecipesService {
@@ -40,5 +46,10 @@ export class RecipesService {
 
   update(id: number, payload: RecipePayload): Observable<RecipeDetail> {
     return this.http.patch<RecipeDetail>(`${this.baseUrl}/${id}`, payload);
+  }
+
+  explode(id: number, runs: number): Observable<ExplodeResult> {
+    const params = new HttpParams().set('runs', runs);
+    return this.http.get<ExplodeResult>(`${this.baseUrl}/${id}/explode`, { params });
   }
 }

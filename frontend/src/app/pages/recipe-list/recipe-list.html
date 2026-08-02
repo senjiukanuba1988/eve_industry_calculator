@@ -65,6 +65,7 @@
             <td>{{ recipeTypeLabel(recipe.recipe_type) }}</td>
             <td>{{ recipe.output_quantity }}</td>
             <td class="actions">
+              <button type="button" (click)="calculateRecipe(recipe.id)">Calculate</button>
               <button type="button" (click)="editRecipe(recipe.id)">Edit</button>
               <button type="button" class="danger" (click)="deleteRecipe(recipe)">Delete</button>
             </td>

@@ -61,6 +61,35 @@ export interface Item {
   category_name: string | null;
 }
 
+export interface ItemFilters {
+  category_id?: number;
+  search?: string;
+}
+
 export type ItemResolveResult =
   | { name: string; matched: true; id: number; category_id: number | null; category_name: string | null }
   | { name: string; matched: false };
+
+export interface ExplodeBaseMaterial {
+  item_id: number;
+  item_name: string;
+  quantity: number;
+}
+
+export interface ExplodeIntermediate {
+  item_id: number;
+  item_name: string;
+  recipe_id: number;
+  batches: number;
+  leftover_quantity: number;
+}
+
+export interface ExplodeResult {
+  recipe_id: number;
+  product_item_id: number;
+  product_item_name: string;
+  runs: number;
+  produced_quantity: number;
+  base_materials: ExplodeBaseMaterial[];
+  intermediates: ExplodeIntermediate[];
+}

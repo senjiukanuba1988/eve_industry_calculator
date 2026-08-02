@@ -10,8 +10,8 @@
       "rationale": "Keeps concerns separated and gives easy DB inspection via Adminer without building custom admin tooling."
     },
     {
-      "decision": "Most business logic (BOM explosion, netting calculations) lives in the Angular frontend; the PHP backend stays small and is mainly responsible for persistence/API of recipes and hangar data.",
-      "rationale": "User's stated preference - backend framework choice is deliberately left open/TBD since the backend's scope is intentionally minimal."
+      "decision": "REVISED (2026-08-02, during 2_material_summary): BOM explosion and hangar-netting calculations move to the PHP backend, not the Angular frontend. The frontend calls an endpoint like \"explode recipe 123 x30 runs\" and gets back the resulting material breakdown, rather than holding the full recipe graph in memory and computing it client-side. The backend is no longer a purely dumb persistence layer - it now owns recipe-graph traversal too.",
+      "rationale": "Original plan was a deliberately dumb backend that just serves all recipe/hangar data to the frontend for it to crunch. User decided against that: the frontend would need the entire recipe graph in memory to explode a BOM, whereas the backend already owns that graph relationally and can walk it directly (recursive query/PHP recursion) and return just the result. This also keeps 4_hangar_netting consistent, since netting logic sits on top of the same explosion and would otherwise have needed the reversal anyway."
     },
     {
       "decision": "Exclude files/directories not relevant to the project itself via .gitignore - IDE metadata (e.g. PHPStorm's .idea/) and third-party libraries/dependency directories (e.g. vendor/, node_modules/).",

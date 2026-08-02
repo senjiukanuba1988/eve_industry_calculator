@@ -8,6 +8,18 @@
     {
       "decision": "Selection UI flow: pick an item first. Only if that item has more than one recipe (final products can, per the 1_recipe_management data model) does a second dropdown appear listing the recipe variants (e.g. by variant_label such as decryptor used). The material summary calculation is then run against the selected recipe_id, not just the item_id.",
       "rationale": "Final products (is_final_product = true) can have multiple recipes (e.g. different decryptors used in invention), each with its own inputs/output_quantity, so the calculation needs an unambiguous recipe to expand rather than just an item."
+    },
+    {
+      "decision": "BOM explosion runs in the PHP backend, not the Angular frontend (revises the original architecture decision - see project.json). The frontend calls an endpoint like 'explode recipe 123 x30 runs' and gets back the material breakdown.",
+      "rationale": "Doing this client-side would require the frontend to hold the entire recipe graph in memory. The backend already owns that graph relationally and can walk it directly, returning just the result. Keeps 4_hangar_netting's future netting logic consistent with where explosion lives."
+    },
+    {
+      "decision": "Leftover/excess intermediate quantities from batch-size rounding (e.g. a reaction batch of 10000 Tungsten Carbide when only a few hundred are needed downstream) are computed and surfaced per intermediate tier, not just the flat base-material totals. This applies mainly to reactions - PI recipes always consume in exact multiples of the prior tier's output so leftovers aren't expected there in practice.",
+      "rationale": "User wants this visible now because it will matter for a future profitability calculator (excess product has value/cost implications). Explicitly distinct from 4_hangar_netting: leftovers here come from batch-size rounding during explosion of a single calculation, not from materials already owned in the hangar - the two won't be conflated."
+    },
+    {
+      "decision": "The fractional per-run reaction quantity rounding issue is explicitly out of scope for this goal - tracked in .claude/FUTURE_IMPROVEMENTS.md instead.",
+      "rationale": "User declared it not a big deal for now; current integer round-up-per-run values are accepted as-is so this goal isn't blocked on a schema/precision change."
     }
   ]
 }

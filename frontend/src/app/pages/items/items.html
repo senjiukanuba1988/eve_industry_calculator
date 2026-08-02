@@ -1,0 +1,77 @@
+<div class="items">
+  <h1>Items</h1>
+
+  <div class="filters">
+    <label>
+      Category
+      <select [(ngModel)]="categoryFilter" (change)="load()">
+        <option [ngValue]="null">All</option>
+        @for (category of categories(); track category.id) {
+          <option [ngValue]="category.id">{{ category.name }}</option>
+        }
+      </select>
+    </label>
+
+    <label>
+      Search
+      <input
+        type="text"
+        placeholder="Item name..."
+        [(ngModel)]="searchFilter"
+        (keyup.enter)="load()"
+      />
+    </label>
+
+    <button type="button" (click)="load()">Search</button>
+  </div>
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+
+  @if (loading()) {
+    <p>Loading...</p>
+  } @else if (items().length === 0) {
+    <p>No items found.</p>
+  } @else {
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Category</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of items(); track item.id) {
+          <tr>
+            @if (editingId === item.id) {
+              <td>
+                <input type="text" [(ngModel)]="editingName" (keyup.enter)="saveEdit()" />
+              </td>
+              <td>
+                <select [(ngModel)]="editingCategoryId">
+                  <option [ngValue]="null">No category</option>
+                  @for (category of categories(); track category.id) {
+                    <option [ngValue]="category.id">{{ category.name }}</option>
+                  }
+                </select>
+              </td>
+              <td class="actions">
+                <button type="button" (click)="saveEdit()">Save</button>
+                <button type="button" (click)="cancelEdit()">Cancel</button>
+              </td>
+            } @else {
+              <td>{{ item.name }}</td>
+              <td>{{ item.category_name ?? '-' }}</td>
+              <td class="actions">
+                <button type="button" (click)="startEdit(item)">Edit</button>
+                <button type="button" class="danger" (click)="deleteItem(item)">Delete</button>
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

@@ -68,6 +68,10 @@ export class RecipeList implements OnInit {
     this.router.navigate(['/recipes', id, 'edit']);
   }
 
+  calculateRecipe(id: number): void {
+    this.router.navigate(['/recipes', id, 'calculate']);
+  }
+
   deleteRecipe(recipe: RecipeListItem): void {
     const label = recipe.variant_label
       ? `${recipe.product_item_name} (${recipe.variant_label})`

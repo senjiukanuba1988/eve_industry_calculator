@@ -65,6 +65,71 @@ final class RecipesController
         return $response->withHeader('Content-Type', 'application/json');
     }
 
+    public function explode(Request $request, Response $response, array $args): Response
+    {
+        $params = $request->getQueryParams();
+        $runs = isset($params['runs']) ? (int) $params['runs'] : 0;
+
+        if ($runs < 1) {
+            return $this->jsonError($response, 422, 'runs must be a positive integer');
+        }
+
+        $pdo = Db::connection();
+        $recipe = $this->findWithInputs($pdo, (int) $args['id']);
+
+        if ($recipe === null) {
+            return $this->jsonError($response, 404, 'Recipe not found');
+        }
+
+        try {
+            $result = (new BomExploder($pdo))->explode($recipe, $runs);
+        } catch (AmbiguousRecipeException $e) {
+            return $this->jsonError($response, 422, $e->getMessage());
+        }
+
+        $itemIds = array_unique(array_merge(
+            array_keys($result['base_materials']),
+            array_keys($result['intermediates'])
+        ));
+        $itemNames = $this->namesForItemIds($pdo, $itemIds);
+
+        $baseMaterials = [];
+        foreach ($result['base_materials'] as $itemId => $quantity) {
+            $baseMaterials[] = [
+                'item_id' => $itemId,
+                'item_name' => $itemNames[$itemId] ?? null,
+                'quantity' => $quantity,
+            ];
+        }
+        usort($baseMaterials, fn ($a, $b) => strcmp((string) $a['item_name'], (string) $b['item_name']));
+
+        $intermediates = [];
+        foreach ($result['intermediates'] as $itemId => $data) {
+            $intermediates[] = [
+                'item_id' => $itemId,
+                'item_name' => $itemNames[$itemId] ?? null,
+                'recipe_id' => $data['recipe_id'],
+                'batches' => $data['batches'],
+                'leftover_quantity' => $data['leftover_quantity'],
+            ];
+        }
+        usort($intermediates, fn ($a, $b) => strcmp((string) $a['item_name'], (string) $b['item_name']));
+
+        $payload = [
+            'recipe_id' => $recipe['id'],
+            'product_item_id' => $recipe['product_item_id'],
+            'product_item_name' => $recipe['product_item_name'],
+            'runs' => $runs,
+            'produced_quantity' => $result['produced_quantity'],
+            'base_materials' => $baseMaterials,
+            'intermediates' => $intermediates,
+        ];
+
+        $response->getBody()->write(json_encode($payload));
+
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
     public function create(Request $request, Response $response): Response
     {
         $validated = $this->validate($this->decodeBody($request), $response);
@@ -315,6 +380,25 @@ final class RecipesController
         $recipe['inputs'] = $stmt->fetchAll();
 
         return $recipe;
+    }
+
+    /** @param array<int,int> $itemIds @return array<int,string> */
+    private function namesForItemIds(PDO $pdo, array $itemIds): array
+    {
+        if ($itemIds === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($itemIds), '?'));
+        $stmt = $pdo->prepare("SELECT id, name FROM items WHERE id IN ({$placeholders})");
+        $stmt->execute(array_values($itemIds));
+
+        $names = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $names[(int) $row['id']] = $row['name'];
+        }
+
+        return $names;
     }
 
     private function exists(PDO $pdo, int $id): bool
