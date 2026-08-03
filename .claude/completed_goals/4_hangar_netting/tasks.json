@@ -1,0 +1,45 @@
+{
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Backend: switch explode to POST, resolve hangar names server-side",
+      "description": "Change /recipes/{id}/explode from GET+runs-query to POST accepting a JSON body {runs, hangar: [{name, quantity}]}. In RecipesController::explode, resolve each hangar entry's name to an item_id via an exact match against items.name (mirroring the existing namesForItemIds reverse lookup), summing duplicate names and silently dropping names that don't match any known item, before passing an item_id => quantity map into BomExploder.",
+      "status": "done",
+      "priority": "high",
+      "created": "2026-08-03",
+      "completed_at": "2026-08-03",
+      "notes": "Route changed to POST; added resolveHangar()/itemIdsForNames() helpers to RecipesController. BomExploder::explode() now takes a $hangar item_id=>quantity param and seeds the leftover ledger from it (full base-material netting still pending task 2). Also updated RecipesService.explode() and HangarEntry model on the frontend so the app keeps working via an empty hangar array until tasks 3/4 add the real UI. Verified: hangar-supplied Sulfuric Acid quantity fully covering demand removes it from intermediates; unmatched hangar name silently dropped."
+    },
+    {
+      "id": 2,
+      "title": "Backend: BomExploder hangar netting",
+      "description": "Seed BomExploder's leftover ledger from the resolved hangar item_id => quantity map before exploding. Extend need() so base materials also draw down leftover (currently only intermediates do - a gap since raw minerals can be in the hangar too). Track total demand per item so the response can report needed_quantity and hangar_quantity (amount covered by hangar) alongside the existing quantity/produced_quantity/leftover_quantity fields, for both base_materials and intermediates.",
+      "status": "done",
+      "priority": "high",
+      "created": "2026-08-03",
+      "completed_at": "2026-08-03",
+      "notes": "need() now checks/draws down leftover for base materials too (previously only intermediates did), and tracks cumulative totalDemand per item. Verified against Laser Focusing Crystals x5 with hangar covering Strontium Clathrates (base material) and Sulfuric Acid (intermediate) partially - numbers match expected mass balance. REVISED after user feedback: initially exposed needed_quantity/hangar_quantity per base_material/intermediate row, but fully-covered items (e.g. 1,000,000 Tritanium hangar vs 4,750 needed) then vanished from the response entirely since they no longer have a shortfall. Replaced that with a separate top-level hangar_usage array in BomExploder::explode(), built from every resolved hangar item_id (not just ones still needing production), each with the raw hangar_quantity and needed_quantity (total demand, 0 if unused) - covered/still-needed/remaining-in-hangar are derived client-side from those two numbers. base_materials/intermediates reverted to their pre-netting-reporting shape (still correctly netted, just no longer carrying the redundant fields)."
+    },
+    {
+      "id": 3,
+      "title": "Frontend: hangar textarea + parser",
+      "description": "Add a paste-in textarea on the recipe-calculator page for hangar contents (not persisted - re-pasted each time). Parser splits each line on tab, takes column 0 as item name and column 1 as quantity (stripping '.' thousands separators, e.g. '14.037' -> 14037), ignores any further columns (category/volume/ISK etc. from the assets-window clipboard format). No name resolution or item lookups on the frontend - just forward the parsed {name, quantity} pairs alongside runs in the new POST explode call; unmatched names are handled (silently dropped) by the backend.",
+      "status": "done",
+      "priority": "high",
+      "created": "2026-08-03",
+      "completed_at": "2026-08-03",
+      "notes": "REVISED after user feedback: the initial tab-only (with multi-space fallback) parser didn't handle single-space-separated pastes cleanly. Replaced with token-based parsing: split the line on any whitespace, take the first token matching /^\\d[\\d.,]*$/ (pure digits/./,) as the quantity, everything before it (joined with spaces) as the name, everything after ignored. Works uniformly for tab- or space-separated input since no item name has a standalone all-numeral token (mixed alphanumeric like 'F77' correctly fails the pure-numeric match and stays part of the name)."
+    },
+    {
+      "id": 4,
+      "title": "Frontend: rework tables for hangar coverage",
+      "description": "Update recipe-calculator.ts/.html for the new response shape (recipe.model.ts already updated with a hangar_usage: HangarUsage[] field). Add a new 'Hangar Usage' table sourced from result.hangar_usage, one row per resolved hangar item regardless of whether it was needed at all, with columns for hangar quantity, needed quantity, and client-derived used-from-hangar / still-needed / remaining-in-hangar (used = min(hangar_quantity, needed_quantity); still_needed = needed_quantity - used; remaining = hangar_quantity - used). Existing Base Materials table stays as-is (still-needed only, correctly omits fully-covered items since there's nothing left to acquire). Also revert Build Steps from the sentence-list (built in 3_build_steps_breakdown) back to a table - Item, Runs, Produced, Leftover - for clean visual alignment.",
+      "status": "done",
+      "priority": "medium",
+      "created": "2026-08-03",
+      "completed_at": "2026-08-03",
+      "notes": "Added usedFromHangar()/stillNeeded()/remainingInHangar() derived-value helpers on the component. Build Steps reverted to a table (Item, Runs, Produced, Leftover). Hangar Usage table added. REVISED after user feedback: split into two tables - 'Hangar Usage' (used > 0, full In Hangar/Used/Still Needed/Remaining breakdown) and 'Unused Hangar Items' (used === 0, just Item/Quantity) via usedHangarUsage()/unusedHangarUsage() filter methods, so items that weren't relevant to this calculation don't clutter the main usage table."
+    }
+  ],
+  "next_session_suggestions": []
+}

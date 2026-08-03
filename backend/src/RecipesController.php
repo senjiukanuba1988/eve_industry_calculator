@@ -67,8 +67,8 @@ final class RecipesController
 
     public function explode(Request $request, Response $response, array $args): Response
     {
-        $params = $request->getQueryParams();
-        $runs = isset($params['runs']) ? (int) $params['runs'] : 0;
+        $data = $this->decodeBody($request);
+        $runs = isset($data['runs']) ? (int) $data['runs'] : 0;
 
         if ($runs < 1) {
             return $this->jsonError($response, 422, 'runs must be a positive integer');
@@ -81,15 +81,18 @@ final class RecipesController
             return $this->jsonError($response, 404, 'Recipe not found');
         }
 
+        $hangar = $this->resolveHangar($pdo, is_array($data['hangar'] ?? null) ? $data['hangar'] : []);
+
         try {
-            $result = (new BomExploder($pdo))->explode($recipe, $runs);
+            $result = (new BomExploder($pdo))->explode($recipe, $runs, $hangar);
         } catch (AmbiguousRecipeException $e) {
             return $this->jsonError($response, 422, $e->getMessage());
         }
 
         $itemIds = array_unique(array_merge(
             array_keys($result['base_materials']),
-            array_keys($result['intermediates'])
+            array_keys($result['intermediates']),
+            array_keys($result['hangar_usage'])
         ));
         $itemNames = $this->namesForItemIds($pdo, $itemIds);
 
@@ -104,21 +107,32 @@ final class RecipesController
         usort($baseMaterials, fn ($a, $b) => strcmp((string) $a['item_name'], (string) $b['item_name']));
 
         $intermediates = [];
-        foreach ($result['intermediates'] as $itemId => $data) {
+        foreach ($result['intermediates'] as $itemId => $intermediate) {
             $intermediates[] = [
                 'item_id' => $itemId,
                 'item_name' => $itemNames[$itemId] ?? null,
-                'recipe_id' => $data['recipe_id'],
-                'batches' => $data['batches'],
-                'produced_quantity' => $data['produced_quantity'],
-                'leftover_quantity' => $data['leftover_quantity'],
-                'tier' => $data['tier'],
+                'recipe_id' => $intermediate['recipe_id'],
+                'batches' => $intermediate['batches'],
+                'produced_quantity' => $intermediate['produced_quantity'],
+                'leftover_quantity' => $intermediate['leftover_quantity'],
+                'tier' => $intermediate['tier'],
             ];
         }
         usort(
             $intermediates,
             fn ($a, $b) => $a['tier'] <=> $b['tier'] ?: strcmp((string) $a['item_name'], (string) $b['item_name'])
         );
+
+        $hangarUsage = [];
+        foreach ($result['hangar_usage'] as $itemId => $usage) {
+            $hangarUsage[] = [
+                'item_id' => $itemId,
+                'item_name' => $itemNames[$itemId] ?? null,
+                'hangar_quantity' => $usage['hangar_quantity'],
+                'needed_quantity' => $usage['needed_quantity'],
+            ];
+        }
+        usort($hangarUsage, fn ($a, $b) => strcmp((string) $a['item_name'], (string) $b['item_name']));
 
         $payload = [
             'recipe_id' => $recipe['id'],
@@ -128,6 +142,7 @@ final class RecipesController
             'produced_quantity' => $result['produced_quantity'],
             'base_materials' => $baseMaterials,
             'intermediates' => $intermediates,
+            'hangar_usage' => $hangarUsage,
         ];
 
         $response->getBody()->write(json_encode($payload));
@@ -404,6 +419,60 @@ final class RecipesController
         }
 
         return $names;
+    }
+
+    /**
+     * Resolves pasted hangar lines (name + quantity) to item_ids, dropping any
+     * name that doesn't match a known item and summing duplicate names.
+     *
+     * @param array<int,array{name?:mixed,quantity?:mixed}> $hangar
+     * @return array<int,int> item_id => quantity
+     */
+    private function resolveHangar(PDO $pdo, array $hangar): array
+    {
+        $names = [];
+        foreach ($hangar as $entry) {
+            $name = trim((string) ($entry['name'] ?? ''));
+            if ($name !== '') {
+                $names[$name] = true;
+            }
+        }
+
+        $itemIds = $this->itemIdsForNames($pdo, array_keys($names));
+
+        $quantities = [];
+        foreach ($hangar as $entry) {
+            $name = trim((string) ($entry['name'] ?? ''));
+            $quantity = (int) ($entry['quantity'] ?? 0);
+
+            if ($quantity <= 0 || !isset($itemIds[$name])) {
+                continue;
+            }
+
+            $itemId = $itemIds[$name];
+            $quantities[$itemId] = ($quantities[$itemId] ?? 0) + $quantity;
+        }
+
+        return $quantities;
+    }
+
+    /** @param array<int,string> $names @return array<string,int> name => item_id */
+    private function itemIdsForNames(PDO $pdo, array $names): array
+    {
+        if ($names === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($names), '?'));
+        $stmt = $pdo->prepare("SELECT id, name FROM items WHERE name IN ({$placeholders})");
+        $stmt->execute(array_values($names));
+
+        $ids = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $ids[$row['name']] = (int) $row['id'];
+        }
+
+        return $ids;
     }
 
     private function exists(PDO $pdo, int $id): bool

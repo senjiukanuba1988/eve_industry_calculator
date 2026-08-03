@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 
 import {
   ExplodeResult,
+  HangarEntry,
   RecipeDetail,
   RecipeFilters,
   RecipeListItem,
@@ -48,8 +49,7 @@ export class RecipesService {
     return this.http.patch<RecipeDetail>(`${this.baseUrl}/${id}`, payload);
   }
 
-  explode(id: number, runs: number): Observable<ExplodeResult> {
-    const params = new HttpParams().set('runs', runs);
-    return this.http.get<ExplodeResult>(`${this.baseUrl}/${id}/explode`, { params });
+  explode(id: number, runs: number, hangar: HangarEntry[] = []): Observable<ExplodeResult> {
+    return this.http.post<ExplodeResult>(`${this.baseUrl}/${id}/explode`, { runs, hangar });
   }
 }

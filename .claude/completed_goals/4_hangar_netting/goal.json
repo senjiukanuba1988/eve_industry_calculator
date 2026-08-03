@@ -1,0 +1,26 @@
+{
+  "name": "4_hangar_netting",
+  "summary": "Import hangar contents and net them against requirements at every tier, propagating leftover intermediates down the tree.",
+  "description": "Lets the user paste/enter their hangar contents so the calculator subtracts what's already owned from what's needed at every tier of the build plan, not just the final product - e.g. if 10 Robotics are needed but 4 are already in the hangar, only the Reactive Metals/Consumer Electronics for the remaining 6 are requested. Also handles reusing partially-built intermediates from earlier steps (e.g. use 5 Acolyte I already built plus 5 more crafted in this run). Done when the worked example from the interview (partial Robotics in hangar reduces Reactive Metals needed) works end to end.",
+  "status": "completed",
+  "created": "2026-07-05",
+  "completed_at": "2026-08-03",
+  "key_decisions": [
+    {
+      "decision": "Hangar contents are never persisted - the user pastes them into a textarea fresh for each calculation, rather than the app storing a hangar inventory.",
+      "rationale": "Hangar contents change often and production may happen in a different location, so a saved/synced inventory would just as often be stale as accurate; paste-each-time keeps the calculator honest about what's actually on hand right now."
+    },
+    {
+      "decision": "/recipes/{id}/explode moved from GET+query to POST+JSON body ({runs, hangar: [{name, quantity}]}) so it could carry the pasted hangar list. The frontend does zero item-name resolution or lookups itself - it only parses pasted text into {name, quantity} pairs; RecipesController resolves names to item_ids server-side (exact match against items.name) and silently drops anything unmatched.",
+      "rationale": "Keeps the frontend from needing to know the full item catalog just to paste a hangar dump, and matches the existing pattern of pushing recipe-graph/domain knowledge into the backend (see the BOM-explosion-ownership decision in project.json)."
+    },
+    {
+      "decision": "The hangar-paste parser splits each line on whitespace and takes the first token matching /^\\d[\\d.,]*$/ (pure digits/./,) as the quantity, treating everything before it as the item name and everything after as ignorable (category/volume/ISK columns from the assets-window clipboard format). This relies on the invariant that no EVE item name ends in a standalone all-numeral token (numbers only ever appear fused into a word, e.g. 'F77 Compact Co-Processor').",
+      "rationale": "Handles both known clipboard formats (inventory: name+quantity only; assets window: name+quantity+several trailing columns) uniformly, and works whether columns are tab- or space-separated, without needing to detect/branch on which format was pasted."
+    },
+    {
+      "decision": "Hangar coverage is reported via a separate hangar_usage list (every resolved hangar item, whether used or not) rather than adding needed_quantity/hangar_quantity fields onto base_materials/intermediates entries.",
+      "rationale": "base_materials/intermediates only list items with a remaining shortfall, so a fully- (or over-) covered item (e.g. 1,000,000 Tritanium hangar vs. 4,750 needed) would otherwise vanish from the response entirely instead of showing up as fully covered. The frontend further splits hangar_usage into a 'Hangar Usage' table (used > 0) and an 'Unused Hangar Items' table (used = 0) so irrelevant pasted items don't clutter the main usage table."
+    }
+  ]
+}

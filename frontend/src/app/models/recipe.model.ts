@@ -70,6 +70,11 @@ export type ItemResolveResult =
   | { name: string; matched: true; id: number; category_id: number | null; category_name: string | null }
   | { name: string; matched: false };
 
+export interface HangarEntry {
+  name: string;
+  quantity: number;
+}
+
 export interface ExplodeBaseMaterial {
   item_id: number;
   item_name: string;
@@ -86,6 +91,13 @@ export interface ExplodeIntermediate {
   tier: number;
 }
 
+export interface HangarUsage {
+  item_id: number;
+  item_name: string;
+  hangar_quantity: number;
+  needed_quantity: number;
+}
+
 export interface ExplodeResult {
   recipe_id: number;
   product_item_id: number;
@@ -94,4 +106,5 @@ export interface ExplodeResult {
   produced_quantity: number;
   base_materials: ExplodeBaseMaterial[];
   intermediates: ExplodeIntermediate[];
+  hangar_usage: HangarUsage[];
 }

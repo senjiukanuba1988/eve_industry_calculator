@@ -40,6 +40,16 @@
       </button>
     </div>
 
+    <label class="hangar-label">
+      Hangar Contents (optional, not saved)
+      <textarea
+        class="hangar-input"
+        rows="6"
+        placeholder="Paste from the inventory or assets window, e.g.&#10;Zydrine&#9;296949&#10;Sulfuric Acid&#9;98"
+        [(ngModel)]="hangarText"
+      ></textarea>
+    </label>
+
     @if (calculateError()) {
       <p class="error">{{ calculateError() }}</p>
     }
@@ -77,18 +87,72 @@
 
         @if (result()!.intermediates.length > 0) {
           <h2>Build Steps</h2>
-          <ol class="build-steps">
-            @for (intermediate of result()!.intermediates; track intermediate.item_id) {
-              <li>
-                Run the <strong>{{ intermediate.item_name }}</strong> recipe
-                <strong>{{ intermediate.batches }}</strong> time(s), resulting in
-                <strong>{{ intermediate.produced_quantity }}</strong> {{ intermediate.item_name }}
-                @if (intermediate.leftover_quantity > 0) {
-                  ({{ intermediate.leftover_quantity }} leftover)
-                }
-              </li>
-            }
-          </ol>
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Runs</th>
+                <th>Produced</th>
+                <th>Leftover</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (intermediate of result()!.intermediates; track intermediate.item_id) {
+                <tr>
+                  <td>{{ intermediate.item_name }}</td>
+                  <td>{{ intermediate.batches }}</td>
+                  <td>{{ intermediate.produced_quantity }}</td>
+                  <td>{{ intermediate.leftover_quantity }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+
+        @if (usedHangarUsage().length > 0) {
+          <h2>Hangar Usage</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>In Hangar</th>
+                <th>Used</th>
+                <th>Still Needed</th>
+                <th>Remaining in Hangar</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (usage of usedHangarUsage(); track usage.item_id) {
+                <tr>
+                  <td>{{ usage.item_name }}</td>
+                  <td>{{ usage.hangar_quantity }}</td>
+                  <td>{{ usedFromHangar(usage) }}</td>
+                  <td>{{ stillNeeded(usage) }}</td>
+                  <td>{{ remainingInHangar(usage) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+
+        @if (unusedHangarUsage().length > 0) {
+          <h2>Unused Hangar Items</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Quantity</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (usage of unusedHangarUsage(); track usage.item_id) {
+                <tr>
+                  <td>{{ usage.item_name }}</td>
+                  <td>{{ usage.hangar_quantity }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
         }
       </div>
     }

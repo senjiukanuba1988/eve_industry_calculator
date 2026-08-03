@@ -24,7 +24,13 @@ final class BomExploder
     /** @var array<int, int> item_id => leftover quantity on hand */
     private array $leftover = [];
 
-    /** @var array<int, int> item_id => cumulative base material quantity needed */
+    /** @var array<int, int> item_id => quantity on hand at the start, before anything was drawn from it */
+    private array $hangarStock = [];
+
+    /** @var array<int, int> item_id => cumulative gross demand, regardless of how it was covered */
+    private array $totalDemand = [];
+
+    /** @var array<int, int> item_id => cumulative base material quantity still needed after hangar netting */
     private array $baseMaterials = [];
 
     /** @var array<int, array{recipe_id:int, batches:int}> item_id => accumulated intermediate data */
@@ -36,14 +42,19 @@ final class BomExploder
 
     /**
      * @param array{output_quantity:int, inputs:array<int,array{input_item_id:int,input_quantity:int}>} $rootRecipe
+     * @param array<int, int> $hangar item_id => quantity already on hand, netted off demand before producing more
      * @return array{
      *     produced_quantity:int,
      *     base_materials:array<int,int>,
-     *     intermediates:array<int,array{recipe_id:int,batches:int,produced_quantity:int,leftover_quantity:int,tier:int}>
+     *     intermediates:array<int,array{recipe_id:int,batches:int,produced_quantity:int,leftover_quantity:int,tier:int}>,
+     *     hangar_usage:array<int,array{hangar_quantity:int,needed_quantity:int}>
      * }
      */
-    public function explode(array $rootRecipe, int $runs): array
+    public function explode(array $rootRecipe, int $runs, array $hangar = []): array
     {
+        $this->hangarStock = $hangar;
+        $this->leftover = $hangar;
+
         foreach ($rootRecipe['inputs'] as $input) {
             $this->need((int) $input['input_item_id'], (int) $input['input_quantity'] * $runs);
         }
@@ -61,22 +72,27 @@ final class BomExploder
             ];
         }
 
+        // Reported for every resolved hangar item regardless of whether it was
+        // needed at all, so a fully- (or over-) covered item is never just dropped.
+        $hangarUsage = [];
+        foreach ($this->hangarStock as $itemId => $stock) {
+            $hangarUsage[$itemId] = [
+                'hangar_quantity' => $stock,
+                'needed_quantity' => $this->totalDemand[$itemId] ?? 0,
+            ];
+        }
+
         return [
             'produced_quantity' => $runs * (int) $rootRecipe['output_quantity'],
             'base_materials' => $this->baseMaterials,
             'intermediates' => $intermediates,
+            'hangar_usage' => $hangarUsage,
         ];
     }
 
     private function need(int $itemId, int $quantityNeeded): void
     {
-        $recipe = $this->recipeFor($itemId);
-
-        if ($recipe === null) {
-            $this->baseMaterials[$itemId] = ($this->baseMaterials[$itemId] ?? 0) + $quantityNeeded;
-
-            return;
-        }
+        $this->totalDemand[$itemId] = ($this->totalDemand[$itemId] ?? 0) + $quantityNeeded;
 
         $available = $this->leftover[$itemId] ?? 0;
 
@@ -87,6 +103,15 @@ final class BomExploder
         }
 
         $shortfall = $quantityNeeded - $available;
+        $recipe = $this->recipeFor($itemId);
+
+        if ($recipe === null) {
+            $this->leftover[$itemId] = 0;
+            $this->baseMaterials[$itemId] = ($this->baseMaterials[$itemId] ?? 0) + $shortfall;
+
+            return;
+        }
+
         $outputQuantity = $recipe['output_quantity'];
         $batches = $outputQuantity === 1 ? $shortfall : (int) ceil($shortfall / $outputQuantity);
 

@@ -38,7 +38,7 @@ $app->get('/items/{id}/recipes', [ItemsController::class, 'recipes']);
 $app->get('/recipes', [RecipesController::class, 'index']);
 $app->post('/recipes', [RecipesController::class, 'create']);
 $app->get('/recipes/{id}', [RecipesController::class, 'show']);
-$app->get('/recipes/{id}/explode', [RecipesController::class, 'explode']);
+$app->post('/recipes/{id}/explode', [RecipesController::class, 'explode']);
 $app->patch('/recipes/{id}', [RecipesController::class, 'update']);
 $app->delete('/recipes/{id}', [RecipesController::class, 'delete']);
 
