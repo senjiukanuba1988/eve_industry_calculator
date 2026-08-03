@@ -63,97 +63,65 @@
           from {{ result()!.runs }} run(s).
         </p>
 
-        <h2>Base Materials</h2>
-        @if (result()!.base_materials.length === 0) {
-          <p>No base materials.</p>
-        } @else {
-          <table>
-            <thead>
-              <tr>
-                <th>Item</th>
-                <th>Quantity</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (material of result()!.base_materials; track material.item_id) {
-                <tr>
-                  <td>{{ material.item_name }}</td>
-                  <td>{{ material.quantity }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        }
+        <div class="results-columns">
+          <section>
+            <h2>Used Materials</h2>
+            @if (usedMaterials().length === 0) {
+              <p>No materials used.</p>
+            } @else {
+              <table>
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>In Hangar</th>
+                    <th>Used</th>
+                    <th>Still Needed</th>
+                    <th>Remaining in Hangar</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of usedMaterials(); track row.item_id) {
+                    <tr>
+                      <td>{{ row.item_name }}</td>
+                      <td>{{ row.hangar_quantity }}</td>
+                      <td>{{ row.used_quantity }}</td>
+                      <td>{{ row.still_needed_quantity }}</td>
+                      <td>{{ row.remaining_in_hangar }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+          </section>
 
-        @if (result()!.intermediates.length > 0) {
-          <h2>Build Steps</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Item</th>
-                <th>Runs</th>
-                <th>Produced</th>
-                <th>Leftover</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (intermediate of result()!.intermediates; track intermediate.item_id) {
-                <tr>
-                  <td>{{ intermediate.item_name }}</td>
-                  <td>{{ intermediate.batches }}</td>
-                  <td>{{ intermediate.produced_quantity }}</td>
-                  <td>{{ intermediate.leftover_quantity }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        }
-
-        @if (usedHangarUsage().length > 0) {
-          <h2>Hangar Usage</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Item</th>
-                <th>In Hangar</th>
-                <th>Used</th>
-                <th>Still Needed</th>
-                <th>Remaining in Hangar</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (usage of usedHangarUsage(); track usage.item_id) {
-                <tr>
-                  <td>{{ usage.item_name }}</td>
-                  <td>{{ usage.hangar_quantity }}</td>
-                  <td>{{ usedFromHangar(usage) }}</td>
-                  <td>{{ stillNeeded(usage) }}</td>
-                  <td>{{ remainingInHangar(usage) }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        }
-
-        @if (unusedHangarUsage().length > 0) {
-          <h2>Unused Hangar Items</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Item</th>
-                <th>Quantity</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (usage of unusedHangarUsage(); track usage.item_id) {
-                <tr>
-                  <td>{{ usage.item_name }}</td>
-                  <td>{{ usage.hangar_quantity }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        }
+          <section>
+            <h2>Build Steps</h2>
+            @if (result()!.intermediates.length === 0) {
+              <p>No build steps.</p>
+            } @else {
+              <table>
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Runs</th>
+                    <th>Produced</th>
+                    <th>Leftover</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (intermediate of result()!.intermediates; track intermediate.item_id) {
+                    <tr>
+                      <td>{{ intermediate.item_name }}</td>
+                      <td>{{ intermediate.batches }}</td>
+                      <td>{{ intermediate.produced_quantity }}</td>
+                      <td>{{ intermediate.leftover_quantity }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+          </section>
+        </div>
       </div>
     }
   }

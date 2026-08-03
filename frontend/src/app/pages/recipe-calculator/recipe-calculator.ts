@@ -2,9 +2,18 @@ import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
-import { ExplodeResult, HangarEntry, HangarUsage, RecipeDetail } from '../../models/recipe.model';
+import { ExplodeResult, HangarEntry, RecipeDetail } from '../../models/recipe.model';
 import { RecipeTypesService } from '../../services/recipe-types.service';
 import { RecipesService } from '../../services/recipes.service';
+
+export interface UsedMaterialRow {
+  item_id: number;
+  item_name: string;
+  hangar_quantity: number;
+  used_quantity: number;
+  still_needed_quantity: number;
+  remaining_in_hangar: number;
+}
 
 @Component({
   selector: 'app-recipe-calculator',
@@ -58,24 +67,54 @@ export class RecipeCalculator implements OnInit {
     return this.recipeTypeLabels()[value] ?? value;
   }
 
-  usedFromHangar(usage: HangarUsage): number {
-    return Math.min(usage.hangar_quantity, usage.needed_quantity);
-  }
+  /**
+   * Merges base_materials (already netted against the hangar) with hangar_usage
+   * (gross demand for anything pasted into the hangar, base or intermediate) into
+   * one "used materials" view: every base material that's needed, plus any
+   * intermediate the user already holds some of - never anything unused.
+   */
+  usedMaterials(): UsedMaterialRow[] {
+    const result = this.result();
+    if (!result) {
+      return [];
+    }
 
-  stillNeeded(usage: HangarUsage): number {
-    return usage.needed_quantity - this.usedFromHangar(usage);
-  }
+    const rows: UsedMaterialRow[] = [];
+    const seen = new Set<number>();
 
-  remainingInHangar(usage: HangarUsage): number {
-    return usage.hangar_quantity - this.usedFromHangar(usage);
-  }
+    for (const usage of result.hangar_usage) {
+      if (usage.needed_quantity <= 0) {
+        continue;
+      }
 
-  usedHangarUsage(): HangarUsage[] {
-    return (this.result()?.hangar_usage ?? []).filter((usage) => this.usedFromHangar(usage) > 0);
-  }
+      const used = Math.min(usage.hangar_quantity, usage.needed_quantity);
+      rows.push({
+        item_id: usage.item_id,
+        item_name: usage.item_name,
+        hangar_quantity: usage.hangar_quantity,
+        used_quantity: used,
+        still_needed_quantity: usage.needed_quantity - used,
+        remaining_in_hangar: usage.hangar_quantity - used,
+      });
+      seen.add(usage.item_id);
+    }
 
-  unusedHangarUsage(): HangarUsage[] {
-    return (this.result()?.hangar_usage ?? []).filter((usage) => this.usedFromHangar(usage) === 0);
+    for (const material of result.base_materials) {
+      if (seen.has(material.item_id)) {
+        continue;
+      }
+
+      rows.push({
+        item_id: material.item_id,
+        item_name: material.item_name,
+        hangar_quantity: 0,
+        used_quantity: 0,
+        still_needed_quantity: material.quantity,
+        remaining_in_hangar: 0,
+      });
+    }
+
+    return rows;
   }
 
   calculate(): void {
