@@ -81,7 +81,9 @@ export interface ExplodeIntermediate {
   item_name: string;
   recipe_id: number;
   batches: number;
+  produced_quantity: number;
   leftover_quantity: number;
+  tier: number;
 }
 
 export interface ExplodeResult {

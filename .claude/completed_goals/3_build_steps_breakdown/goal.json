@@ -1,0 +1,9 @@
+{
+  "name": "3_build_steps_breakdown",
+  "summary": "Show the intermediate build steps/plan (what to craft at each tier), not just the flat material total.",
+  "description": "Builds on material_summary by presenting, for a given top-level recipe x quantity, how many runs of EACH recipe in the exploded tree are needed and how much output that yields - e.g. 'run the Sulfuric Acid reaction 5 times, resulting in 1000 Sulfuric Acid', for every intermediate recipe up through the final product. Explicitly NOT about the per-step material inputs (that's already covered by material_summary's flat totals) - this is a runs-per-recipe list/tree. Backend returns this as JSON; frontend presentation (list, tree, wording) is secondary and flexible. Done when a multi-tier recipe produces a readable ordered list of {recipe, runs, output_quantity} rather than just a flat material totals list.",
+  "status": "completed",
+  "created": "2026-07-05",
+  "completed_at": "2026-08-03",
+  "key_decisions": []
+}

@@ -1,0 +1,36 @@
+{
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Backend: add produced quantity per intermediate to explode response",
+      "description": "BomExploder currently tracks 'batches' (runs) per intermediate recipe but the /recipes/{id}/explode response doesn't expose the resulting output quantity. Add produced_quantity (batches * recipe output_quantity) per intermediate in BomExploder::explode() and RecipesController::explode(), so the API can express 'ran recipe X N times, producing Y units'.",
+      "status": "done",
+      "priority": "high",
+      "created": "2026-08-03",
+      "completed_at": "2026-08-03"
+    },
+    {
+      "id": 2,
+      "title": "Backend: order intermediates by build tier",
+      "description": "Intermediates in the explode response are currently sorted alphabetically by item name. Reorder them so lower-tier recipes (those with no intermediate dependencies, e.g. base reactions like Sulfuric Acid) come before recipes that consume them, so the list reads as an actual bottom-up build sequence.",
+      "status": "done",
+      "priority": "medium",
+      "created": "2026-08-03",
+      "completed_at": "2026-08-03",
+      "notes": "Added a 'tier' field per intermediate (0 = consumes only base materials, else 1 + max tier of its intermediate inputs), computed in BomExploder::tierOf() via memoized recursion over the recipe cache. RecipesController sorts by tier asc then item_name asc. Verified against Laser Focusing Crystals explode: Nitrogen Fuel Block (tier 2) -> Sulfuric Acid/Rolled Tungsten Alloy (tier 3) -> Tungsten Carbide (tier 4), matching the known reaction chain."
+    },
+    {
+      "id": 3,
+      "title": "Frontend: display runs -> produced quantity per recipe",
+      "description": "Update recipe-calculator.ts/.html to show the new produced_quantity field per intermediate (e.g. 'run the Sulfuric Acid reaction 5 times, resulting in 1000 Sulfuric Acid'), replacing or supplementing the current 'Batches Run' / 'Leftover' columns with this runs-per-recipe framing. Update ExplodeIntermediate model in recipe.model.ts accordingly.",
+      "status": "done",
+      "priority": "high",
+      "created": "2026-08-03",
+      "completed_at": "2026-08-03",
+      "notes": "Added produced_quantity and tier to ExplodeIntermediate in recipe.model.ts. Replaced the 'Intermediates & Leftovers' table in recipe-calculator.html with a 'Build Steps' ordered list phrased as 'Run the X recipe N time(s), resulting in Y X' (plus leftover noted parenthetically when > 0), relying on the backend's tier-sorted order. Frontend dev server rebuilt with no errors; user to verify visually at /recipes/21/calculate."
+    }
+  ],
+  "next_session_suggestions": [
+    "Start with task #1 (backend produced_quantity field) since #2 and #3 build on it."
+  ]
+}

@@ -39,7 +39,7 @@ final class BomExploder
      * @return array{
      *     produced_quantity:int,
      *     base_materials:array<int,int>,
-     *     intermediates:array<int,array{recipe_id:int,batches:int,leftover_quantity:int}>
+     *     intermediates:array<int,array{recipe_id:int,batches:int,produced_quantity:int,leftover_quantity:int,tier:int}>
      * }
      */
     public function explode(array $rootRecipe, int $runs): array
@@ -48,12 +48,16 @@ final class BomExploder
             $this->need((int) $input['input_item_id'], (int) $input['input_quantity'] * $runs);
         }
 
+        $tiers = [];
         $intermediates = [];
         foreach ($this->intermediates as $itemId => $data) {
+            $outputQuantity = $this->recipeCache[$itemId]['output_quantity'] ?? 1;
             $intermediates[$itemId] = [
                 'recipe_id' => $data['recipe_id'],
                 'batches' => $data['batches'],
+                'produced_quantity' => $data['batches'] * $outputQuantity,
                 'leftover_quantity' => $this->leftover[$itemId] ?? 0,
+                'tier' => $this->tierOf($itemId, $tiers),
             ];
         }
 
@@ -96,6 +100,31 @@ final class BomExploder
         foreach ($recipe['inputs'] as $input) {
             $this->need((int) $input['input_item_id'], (int) $input['input_quantity'] * $batches);
         }
+    }
+
+    /**
+     * Build tier: 0 for an intermediate whose recipe consumes only base materials,
+     * otherwise 1 + the highest tier among its intermediate inputs. Used to order
+     * the result so every intermediate is listed after everything it depends on.
+     *
+     * @param array<int, int> $tiers item_id => tier, memoized across calls
+     */
+    private function tierOf(int $itemId, array &$tiers): int
+    {
+        if (isset($tiers[$itemId])) {
+            return $tiers[$itemId];
+        }
+
+        $highestInputTier = -1;
+        foreach ($this->recipeCache[$itemId]['inputs'] ?? [] as $input) {
+            $inputItemId = (int) $input['input_item_id'];
+
+            if (isset($this->intermediates[$inputItemId])) {
+                $highestInputTier = max($highestInputTier, $this->tierOf($inputItemId, $tiers));
+            }
+        }
+
+        return $tiers[$itemId] = $highestInputTier + 1;
     }
 
     /** @return array{id:int, output_quantity:int, inputs:array<int,array{input_item_id:int,input_quantity:int}>}|null */

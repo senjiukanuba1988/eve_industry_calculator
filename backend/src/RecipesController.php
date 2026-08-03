@@ -110,10 +110,15 @@ final class RecipesController
                 'item_name' => $itemNames[$itemId] ?? null,
                 'recipe_id' => $data['recipe_id'],
                 'batches' => $data['batches'],
+                'produced_quantity' => $data['produced_quantity'],
                 'leftover_quantity' => $data['leftover_quantity'],
+                'tier' => $data['tier'],
             ];
         }
-        usort($intermediates, fn ($a, $b) => strcmp((string) $a['item_name'], (string) $b['item_name']));
+        usort(
+            $intermediates,
+            fn ($a, $b) => $a['tier'] <=> $b['tier'] ?: strcmp((string) $a['item_name'], (string) $b['item_name'])
+        );
 
         $payload = [
             'recipe_id' => $recipe['id'],
