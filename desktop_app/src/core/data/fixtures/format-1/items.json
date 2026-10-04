@@ -1,0 +1,35 @@
+{
+  "categories": {
+    "Components": [
+      "Construction Blocks"
+    ],
+    "Minerals": [
+      "Morphite",
+      "Pyerite",
+      "Tritanium"
+    ],
+    "Moon Materials": [
+      "Rolled Tungsten Alloy",
+      "Sulfuric Acid",
+      "Tungsten Carbide"
+    ],
+    "Planetary P1": [
+      "Reactive Metals"
+    ],
+    "Planetary P2": [
+      "Consumer Electronics"
+    ],
+    "Planetary P3": [
+      "Robotics"
+    ],
+    "Ships": [
+      "Flycatcher"
+    ],
+    "Structures": []
+  },
+  "uncategorised": [
+    "'Arbalest' Cruise Launcher I",
+    "Acolyte I",
+    "Acolyte II"
+  ]
+}

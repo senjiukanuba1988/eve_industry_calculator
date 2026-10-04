@@ -94,25 +94,31 @@
       "id": 10,
       "title": "Data model, serialisation and load-time validation",
       "description": "Implement design/data-files.md in the domain core: TypeScript types for manifest/items/recipes/hangar/plans. A serialiser that pretty-prints with two-space indentation, fixed key order, alphabetical maps, omitted optional fields, LF endings and a trailing newline. A JSON reader that rejects repeated keys and reports line numbers. Full validation of every rule listed under 'Validation on load', producing file + line (or data path) + expected-vs-found errors.\n\nTesting: automated - round trip (parse then serialise is byte-identical); every validation rule has a failing-input test asserting the file, line and message; the repeated-key test; CRLF input accepted.",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
-      "created": "2026-10-04"
+      "created": "2026-10-04",
+      "completed_at": "2026-10-04",
+      "notes": "Code in desktop_app/src/core/data/: jsonParse (own strict parser with lines, repeated-key detection, BOM + CRLF accepted), jsonWrite (writes from explicit entry lists, since JS objects reorder integer-like keys), model, serialize, decode (per-file structure/types, collects all errors in a file, records path -> line), validate (cross-file rules incl. cycle detection), load (orchestrates; cross-file checks skipped while any file is broken). Name-keyed maps are Map, not objects. Fixture data folder in src/core/data/fixtures/format-1/ (illustrative quantities, not real EVE recipes) - task 12 reuses it. User decisions this session: unknown keys are malformed; a product's only recipe MAY carry a variant label; report all errors where cheap, but a syntax error stops that file and cross-file checks only run once every file is sound. Claude's calls: names (items, categories, labels) with leading/trailing spaces or empty are malformed; empty variant label is malformed (omit instead); quantities must be plain integer literals (no 1.0 / 1e3) within the exact integer range; timestamps must have an explicit offset (no Z); per-state step rules (started needs started+deducted and may not have done/addedTo*; done needs done+addedToReserved+addedToGeneral); a completed plan with 'reserved' is malformed; an empty reserved pile {} is valid and still means reserved; a completed plan's target item is NOT checked (otherwise deleting the recipe and then the item after completion would produce data the app refuses to load - contradicts data-files.md's 'plan targets name an existing item' for completed plans). 112 Vitest tests green, lint clean."
     },
     {
       "id": 11,
       "title": "Storage layer: file commands, atomic commit, browser adapter",
       "description": "Thin Rust commands: read file, write and flush file, rename, delete, list, copy, resolve Documents via the Windows known-folder API, and open a folder in Explorer, with retry and backoff on rename for OneDrive locks. In TypeScript, behind the storage interface: the commit protocol from data-files.md (tmp files, commit.json as the commit point, renames, replace + delete lists) and start-up recovery (roll forward / discard). A browser storage adapter for dev:browser.\n\nTesting: automated - the commit protocol and recovery run against an in-memory fake file system, simulating a crash after every individual operation and asserting the folder always ends up wholly before or wholly after; cargo tests for the Rust commands against a temp directory. Manual (user) - none expected.",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
-      "created": "2026-10-04"
+      "created": "2026-10-04",
+      "completed_at": "2026-10-04",
+      "notes": "Rust (src-tauri/src/files.rs + commands in lib.rs): read_text, write_text (sync_all), rename (MoveFileExW REPLACE_EXISTING|WRITE_THROUGH, retry 25..800 ms on os errors 5/32/33), remove (missing = ok), list (missing folder = empty), copy (+flush; needs write access on Windows), create_dir, exists, open_folder (opener plugin), data_folder. All take paths relative to the data folder; '..', absolute paths, empty segments etc. are refused. Data folder resolved once in setup via app.path().document_dir() (known-folder API). USER DECISION: debug builds use 'Documents\\EVE Industry Calculator (dev)', release builds the real folder. TS (src/storage/): FileSystem + DataFolder interfaces, tauriDataFolder, MemoryFileSystem (fake with crashAfter(n), torn writes, failOn), BrowserFileSystem (MemoryFileSystem persisted to localStorage), commit.ts (commit + recover; CommitError.committed says whether the change took effect; a failure after the commit point retries via recover once). Tests: 16 cargo (incl. a real locked-file retry), 24 Vitest for storage incl. crash after every op of a commit, crash at every op of recovery after each of those, torn write. Mutation check: moving a rename before the commit point makes 5 tests fail. The Tauri adapter itself is only exercised end-to-end once task 12 uses it."
     },
     {
       "id": 12,
       "title": "Start-up sequence and data conversion framework",
       "description": "Implement design/upgrades.md: create the folder on first start; read the manifest; start, convert or refuse by formatVersion; a conversion-step chain (empty for format 1) run in memory and validated; backup to backups\\format A to B - <date time>\\; commit; the one-off conversion message; the refuse-newer and malformed-data error screens, with 'open data folder' and 'try again'. Add the format-1 fixture data folder and the schema-snapshot guard test.\n\nTesting: automated - every start-up test listed in upgrades.md, using a test-only fake conversion step to exercise the convert path; malformed data leaves files byte-identical. Manual (user) - hand-break a file while the app is closed and check that the error names the right file and line, then fix it and press try again.",
-      "status": "todo",
+      "status": "done",
+      "notes": "Automated: 177 Vitest + 16 cargo tests, lint clean. Manual (user, 2026-10-04): broke items.json both as invalid JSON and as valid JSON with a misspelt key; both gave good messages, and Try again started normally once fixed. core/data/format.ts: CURRENT_FORMAT = 1, CONVERSION_STEPS = [], convertData (chain in memory, then validated by serialising to text and running loadData; files left over that the new format lacks are an error, not silently deleted), emptyData. decode.ts now exports FIELDS/ENUMS (complete since unknown keys are rejected); fixtures/format-1.schema.json snapshots them and format.test.ts fails with instructions when the shape changes without a format bump (mutation-checked). app/startup.ts: recover -> create folder on first start -> read only formatVersion/writtenBy leniently (so a newer format with a changed manifest is still recognised as newer) -> start / refuse / convert (backup to backups/format A to B - YYYY-MM-DD HH-mm with ' (2)' suffix, then one commit incl. deletes). Tests use a made-up 'format 1' (fixtures/olderFormat.ts, stock.json -> hangar.json) with currentFormat injected as 2, incl. a crash after every operation of a conversion. app/oneAtATime.ts serialises start-up runs (React StrictMode runs effects twice in dev); all later writes must go through it too. UI: ui/Startup.tsx with error screens (malformed / newer / conversionFailed / failed), open-folder + try-again, one-off conversion notice in App. Seven-day plan removal (step 5 of the sequence) is left to task 28. Verified end to end: npm run dev created Documents\\EVE Industry Calculator (dev) with the five files and no leftovers.",
       "priority": "high",
-      "created": "2026-10-04"
+      "created": "2026-10-04",
+      "completed_at": "2026-10-04"
     },
     {
       "id": 13,
@@ -284,8 +290,7 @@
     }
   ],
   "next_session_suggestions": [
-    "Task 8: install Node LTS, Rust and the Visual Studio Build Tools on the Windows host (Claude gives the steps, the user runs the installers).",
-    "Task 9: scaffold desktop_app/ and get a window, the browser dev mode, Vitest and cargo test all running.",
-    "Then tasks 10-12 (data model, storage layer, start-up/conversion) - the data foundation everything else sits on."
+    "Task 13: application shell - one window with the Plans / Recipes / Hangar / Items sidebar, the three start-up landing pages, the data-folder panel (path, open button, 'edit only while closed' note), confirmation dialogs, and the action pattern (compute in memory -> one atomic commit through oneAtATime -> then update the screen; a commit that fails leaves state unchanged, CommitError.committed tells whether it took effect). It replaces the placeholder ui/App.tsx and must also bring manifest writtenBy up to date on the first commit by a newer build (upgrades.md).",
+    "After task 13, continue in order with tasks 14-19 (categories, items, recipe validation, autocomplete, recipe form, recipe list)."
   ]
 }

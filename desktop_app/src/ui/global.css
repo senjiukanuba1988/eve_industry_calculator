@@ -12,3 +12,43 @@ body {
 main {
   padding: 16px;
 }
+
+button {
+  font: inherit;
+  padding: 3px 10px;
+}
+
+code {
+  font-family: Consolas, monospace;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.startup-loading,
+.startup-error {
+  padding: 16px;
+  max-width: 760px;
+}
+
+.startup-error h1 {
+  font-size: 18px;
+  color: #b42318;
+}
+
+.startup-errors {
+  font-family: Consolas, monospace;
+  background: #fff;
+  border: 1px solid #d0d7de;
+  padding: 8px 8px 8px 28px;
+}
+
+.notice {
+  border: 1px solid #54aeff;
+  background: #ddf4ff;
+  padding: 8px 12px;
+  margin: 8px 0;
+}

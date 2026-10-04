@@ -1,0 +1,70 @@
+{
+  "plans": [
+    {
+      "name": "80 Flycatchers",
+      "target": {
+        "product": "Flycatcher"
+      },
+      "runs": 80,
+      "created": "2026-10-04T16:32:05+02:00",
+      "variantChoices": {
+        "Acolyte II": "Accelerant Decryptor"
+      },
+      "reserved": {
+        "Construction Blocks": 2000,
+        "Robotics": 4
+      },
+      "steps": [
+        {
+          "state": "done",
+          "product": "Robotics",
+          "runs": 6,
+          "inputsPerRun": {
+            "Consumer Electronics": 10,
+            "Reactive Metals": 10
+          },
+          "outputPerRun": 1,
+          "takenFrom": "reserved",
+          "deducted": {
+            "Consumer Electronics": 60,
+            "Reactive Metals": 60
+          },
+          "started": "2026-10-05T09:10:00+02:00",
+          "done": "2026-10-06T21:44:12+02:00",
+          "addedToReserved": 6,
+          "addedToGeneral": 0
+        },
+        {
+          "state": "started",
+          "product": "Tungsten Carbide",
+          "runs": 5,
+          "inputsPerRun": {
+            "Rolled Tungsten Alloy": 98,
+            "Sulfuric Acid": 98
+          },
+          "outputPerRun": 10000,
+          "takenFrom": "reserved",
+          "deducted": {
+            "Rolled Tungsten Alloy": 490,
+            "Sulfuric Acid": 450
+          },
+          "short": {
+            "Sulfuric Acid": 40
+          },
+          "started": "2026-10-06T21:50:00+02:00"
+        }
+      ]
+    },
+    {
+      "name": "30 Acolyte II",
+      "target": {
+        "product": "Acolyte II",
+        "variant": "Symmetry Decryptor"
+      },
+      "runs": 30,
+      "created": "2026-09-30T11:02:41+02:00",
+      "completed": "2026-10-03T18:20:00+02:00",
+      "steps": []
+    }
+  ]
+}

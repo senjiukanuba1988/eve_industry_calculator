@@ -1,0 +1,55 @@
+{
+  "recipes": [
+    {
+      "product": "Acolyte II",
+      "variant": "Accelerant Decryptor",
+      "type": "T2 Manufacturing",
+      "output": 1,
+      "notes": "Invention via Accelerant",
+      "inputs": {
+        "Acolyte I": 1,
+        "Morphite": 1,
+        "Robotics": 1
+      }
+    },
+    {
+      "product": "Acolyte II",
+      "variant": "Symmetry Decryptor",
+      "type": "T2 Manufacturing",
+      "output": 1,
+      "inputs": {
+        "Acolyte I": 1,
+        "Morphite": 2,
+        "Robotics": 1
+      }
+    },
+    {
+      "product": "Flycatcher",
+      "type": "T2 Manufacturing",
+      "output": 1,
+      "inputs": {
+        "Construction Blocks": 25,
+        "Robotics": 1,
+        "Tungsten Carbide": 100
+      }
+    },
+    {
+      "product": "Robotics",
+      "type": "Planetary Industry",
+      "output": 1,
+      "inputs": {
+        "Consumer Electronics": 10,
+        "Reactive Metals": 10
+      }
+    },
+    {
+      "product": "Tungsten Carbide",
+      "type": "Reaction",
+      "output": 10000,
+      "inputs": {
+        "Rolled Tungsten Alloy": 98,
+        "Sulfuric Acid": 98
+      }
+    }
+  ]
+}

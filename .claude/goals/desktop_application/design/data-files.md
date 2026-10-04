@@ -269,9 +269,9 @@ The loader re-checks everything the application would refuse to save, since a ha
 - valid JSON, with no repeated keys
 - the expected structure and field types, and quantities that are whole numbers of at least 1
 - unique category and item names, ignoring case and surrounding whitespace; every item listed exactly once
-- every reference in recipes, the hangar, reserved piles and plan targets names an existing item
+- every reference in recipes, the hangar and reserved piles names an existing item
 - the recipe rules: at least one input, no recipe consuming its own product, at most one recipe per product except T2, distinct variant labels, one type per product, no cycles
-- every incomplete plan's target names an existing recipe (deleting a recipe that an incomplete plan targets is refused, so only completed plans can have lost theirs)
+- every incomplete plan's target names an existing item and recipe (deleting a recipe that an incomplete plan targets is refused, so only completed plans can have lost theirs; a completed plan's target is not checked at all, since its recipe and then its item may be deleted)
 
 Any failure is reported as malformed data in the form the spec requires: the file, the line where it can be pinned down, what was found, and what was expected there. The application then does not start against the data and writes nothing.
 

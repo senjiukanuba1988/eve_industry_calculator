@@ -1,0 +1,22 @@
+{
+  "formatVersion": 1,
+  "fields": {
+    "manifest": { "required": ["formatVersion", "writtenBy"], "optional": ["note"] },
+    "items": { "required": ["categories", "uncategorised"], "optional": [] },
+    "recipesFile": { "required": ["recipes"], "optional": [] },
+    "recipe": { "required": ["product", "type", "output", "inputs"], "optional": ["variant", "notes"] },
+    "hangar": { "required": ["stock"], "optional": [] },
+    "plansFile": { "required": ["plans"], "optional": [] },
+    "plan": { "required": ["name", "target", "runs", "created", "steps"], "optional": ["completed", "variantChoices", "reserved"] },
+    "target": { "required": ["product"], "optional": ["variant"] },
+    "step": {
+      "required": ["state", "product", "runs", "inputsPerRun", "outputPerRun", "takenFrom"],
+      "optional": ["variant", "deducted", "short", "started", "done", "addedToReserved", "addedToGeneral", "notRemoved"]
+    }
+  },
+  "enums": {
+    "recipeType": ["T1 Manufacturing", "T2 Manufacturing", "Reaction", "Planetary Industry"],
+    "stepState": ["started", "done"],
+    "stockSource": ["reserved", "general"]
+  }
+}
