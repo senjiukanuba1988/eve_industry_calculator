@@ -96,6 +96,7 @@ export interface HangarUsage {
   item_name: string;
   hangar_quantity: number;
   needed_quantity: number;
+  is_base_material: boolean;
 }
 
 export interface ExplodeResult {

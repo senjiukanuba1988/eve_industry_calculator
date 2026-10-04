@@ -1,0 +1,82 @@
+{
+  "name": "desktop_application",
+  "summary": "Rebuild the calculator as a single desktop application with local file storage, no backend, and a redesigned production-plan-centred UX.",
+  "description": "The current app is an Angular frontend plus a Slim/PHP backend plus MySQL plus Adminer, run via docker compose - four containers to start before any material can be calculated. This goal replaces that with one desktop application that keeps all data in readable files on disk and needs nothing running alongside it.\n\nThe work runs in three stages, in order: (1) write a specification of what the application does, purely from the user's point of view, with no technology in it; (2) choose the tech stack; (3) implement. Stage 1 is complete - see openspec/ in this directory.\n\nFunctionally the desktop app keeps everything the web version does (categories, items, recipes across T1/T2/reaction/PI, recursive explosion to base materials, batch leftovers, the runs-per-recipe build plan, hangar netting at every tier) but the user experience is deliberately redesigned around production plans: the hangar becomes saved state the app owns, a calculation becomes a saved plan with an ordered checklist, and working through that checklist - flagging a job started, then done - moves material out of and back into the hangar. A plan can reserve its materials so that other plans stop counting on them. Existing recipe data is not migrated; it gets re-entered.\n\nDone when the desktop application covers the specification, the user's data lives in readable files they can back up and copy, and installing a newer build leaves that data intact.",
+  "status": "active",
+  "created": "2026-10-03",
+  "additional_files": [
+    "openspec/README.md",
+    "openspec/project.md",
+    "openspec/specs/application-shell/spec.md",
+    "openspec/specs/item-catalog/spec.md",
+    "openspec/specs/recipe-library/spec.md",
+    "openspec/specs/material-calculation/spec.md",
+    "openspec/specs/hangar/spec.md",
+    "openspec/specs/production-plans/spec.md",
+    "openspec/specs/data-storage/spec.md",
+    "design/data-files.md",
+    "design/upgrades.md"
+  ],
+  "key_decisions": [
+    {
+      "decision": "The specification is written first, with no technical content whatsoever, in the OpenSpec convention (capabilities, each holding SHALL requirements illustrated by WHEN/THEN scenarios). Tech stack is a separate, later decision, and implementation a later one again.",
+      "rationale": "User wanted what the application does pinned down before anything about how it is built, so that stack choice is judged against a fixed target rather than shaping it. The OpenSpec scenario format doubles as the acceptance criteria for the implementation stage."
+    },
+    {
+      "decision": "REVISES 4_hangar_netting: hangar contents are now persisted, app-owned state rather than text pasted fresh for every calculation. Pasting adds to existing stock, there is an explicit reset that wipes it, and production steps move material in and out of it.",
+      "rationale": "Unavoidable consequence of the new job tracking: if flagging a step as started subtracts its inputs and flagging it done adds its output, the app has to hold stock over time. The original 'never persisted' decision was made because a saved inventory goes stale; the reset operation is the answer to that - the user visits their stations, resets, and pastes everything in fresh."
+    },
+    {
+      "decision": "A calculation becomes a saved plan: named, persisted, any number in flight at once, presented as an ordered checklist of Acquire entries (satisfied automatically when stock appears) and Build entries (moved by hand through not started, started, done). Plans recalculate continuously against current stock and current recipes; steps already done stay done.",
+      "rationale": "A Tech 2 build is a tree of jobs spanning weeks. The user wants to progress a long-term project a few steps at a time while building other things in between, which requires the plan to outlive the window it was calculated in. Continuous recalculation was chosen over an explicit recalculate button so that what is left to do is never stale, accepting that the list can shift between visits."
+    },
+    {
+      "decision": "A plan can reserve its materials, but only when the available stock covers everything it still needs - all or nothing. Reserving moves the exact quantities out of general stock into the plan's own pile, including intermediates it is netting against, not just raw base materials. Output of completed steps lands in that pile too, but only as much as the plan still needs - surplus from whole-run batching (e.g. 6 runs x 200 = 1,200 made for 1,150 needed) goes to general stock, so a reserved plan never holds more than it needs. Releasing, finishing or deleting the plan returns what is left to general stock.",
+      "rationale": "Without reservations, two plans both counting on the same 2,500 Construction Blocks each believe they are fully stocked. The all-or-nothing rule is the user's: a half-reserved plan still cannot be started, so reserving material for it only takes stock away from plans that could have used it. Keeping produced output inside the reservation stops another plan from eating a component this one just made."
+    },
+    {
+      "decision": "Flagging a step started when the hangar does not cover its inputs warns, lists exactly what is short and by how much, and proceeds on confirmation. Quantities clamp at zero rather than going negative, and the shortfall is recorded on the step.",
+      "rationale": "The app cannot see into the game, so its stock figures are a model, not the truth. When the two disagree the player is right. Blocking would make a stale hangar figure stop real work; silent negatives would hide the discrepancy instead of surfacing it."
+    },
+    {
+      "decision": "Only items that some recipe references - as an input or as a product - are stored in the hangar. Everything else in a pasted list is ignored and reported as ignored.",
+      "rationale": "User pastes whole station hangars containing modules, ammunition and ships that the calculator has no use for. Filtering on recipe references rather than on catalog membership keeps the stored hangar to things that can actually appear in a calculation. Consequence: recipes have to exist before pasting stock is worth anything."
+    },
+    {
+      "decision": "All data lives in human-readable plain-text files in one visible folder. No binary formats, no opaque encodings, no database the user cannot open. Installing a newer build leaves the folder untouched and migrates the file layout automatically on first start, keeping a copy of the pre-migration files; an older build refuses to modify data written by a newer one.",
+      "rationale": "User's stated position, consistent with the existing project-level decision that anything living only inside a Docker volume is volatile. Copying the folder has to be a complete backup, and replacing the application must never be a risk to the data - that is what 'a way to patch it' means in practice. A manual install with automatic data migration was chosen over an in-app updater, which would need somewhere to publish builds."
+    },
+    {
+      "decision": "Existing recipe data in backend/db/seeds/recipe_data.sql is not migrated. It gets re-entered by hand in the new application.",
+      "rationale": "User's call - the dataset is small enough that specifying and building an importer costs more than retyping it."
+    },
+    {
+      "decision": "The user experience is redesigned rather than ported. One window with a sidebar switching between Plans, Recipes, Hangar and Items, and a main panel; item names entered by autocomplete with inline creation, replacing the type-then-press-Check-Items flow; results as a worked checklist rather than three read-only tables; ambiguous intermediates ask the user which variant to use instead of failing the calculation.",
+      "rationale": "User explicitly opened the UX up for redesign. The single window follows from the new model: flagging a step moves stock, so the stock and the plan need to be visible without navigating between pages. Autocomplete removes the separate resolve step and incidentally prevents the duplicate-typo'd-item problem recorded in FUTURE_IMPROVEMENTS.md."
+    },
+    {
+      "decision": "No buy-instead-of-build option (2026-10-04). Anything with a recipe is always planned as a build; there is no per-plan or per-item way to say 'buy this intermediate instead'. Bought, found or built material all enter the same way - added to the hangar - after which the steps it makes unnecessary drop out of unreserved plans.",
+      "rationale": "User's call: this is a small personal industry tool, and where an item comes from should not matter to it. The hangar is the single source of truth; netting against it already covers having bought an intermediate. Recorded here because a spec does not list what an app deliberately does not do, and a later session could otherwise reasonably propose adding it."
+    },
+    {
+      "decision": "Tech stack (2026-10-04): Tauri 2 with a React + TypeScript + Vite frontend, packaged as a Windows installer. All domain logic - the calculation engine, plans, reservations, hangar, validation and migrations - is written in TypeScript behind a storage interface. The Rust side stays deliberately thin: reading and writing files in the data folder atomically (write to a temp file, then rename), single instance, opening the folder in Explorer. Development and builds run natively on Windows (Node, Rust, Visual Studio Build Tools); Docker is not used for the desktop app unless it turns out to be useful for something specific. Nothing from the old Angular/PHP code is reused.",
+      "rationale": "User delegated the choice to Claude, with no requirement to use their existing skills or code. Tauri over Electron: a ~5-10 MB installer and low memory use, because it uses the Edge WebView2 built into Windows 11 - which matters for a tool running alongside the EVE client - while keeping a web UI, which suits the dense tables and autocomplete the spec calls for. Domain logic in TypeScript rather than Rust: with a browser-only storage adapter swapped in, the whole app runs in a plain browser, so Claude can drive and screenshot the real UI during development, and the engine can be unit-tested with Vitest without starting a window. React over Svelte/Angular for the largest ecosystem of table/autocomplete components and the most predictable code generation. Native Windows builds rather than Docker because cross-compiling Tauri for Windows from Linux is still experimental. Fallback if installing the Rust/MSVC toolchain proves a problem: Electron with the same React frontend and the same TypeScript core, since only the thin file layer would change."
+    },
+    {
+      "decision": "Data file layout (2026-10-04, task 4; full design in design/data-files.md): the folder is Documents\\EVE Industry Calculator, resolved through the Windows known-folder API so OneDrive or other redirection is followed. It holds five pretty-printed JSON files: manifest.json (formatVersion + writtenBy app version), items.json, recipes.json, hangar.json (general stock only) and plans.json (each plan carries its own reserved pile and its started/done steps as frozen snapshots; not-started steps and Acquire entries are never stored). Files contain no IDs: items and categories are referred to by name, recipes by product + variant label, and nothing refers to plans. Renaming cascades through every file in one write. Multi-file writes are atomic through a commit protocol: write .tmp files, rename commit.json into place as the commit point, rename the .tmp files over the originals, delete the marker; on start, roll forward if the marker exists, otherwise delete stray .tmp files.",
+      "rationale": "User said any readable format would do and asked for pretty-printed output. JSON is native to the TypeScript core and offers only one way to write any value. CSV would only fit the hangar, since nested recipe inputs and plan steps would need ID columns linking rows across files, which defeats readability. Splitting by kind keeps each file small and findable, at the cost of needing the commit protocol, which the spec's 'either done or not, consistent with the hangar' crash scenario requires anyway once one action touches several files. Name-based references keep every file self-explanatory, and a hand edit that breaks a reference is caught on load with a file and line. Documents over %APPDATA% because the user's point is that the data is visible; AppData is hidden by default."
+    },
+    {
+      "decision": "Completed plans are removed automatically seven days after completion, checked once each time the application starts; while kept, a completed plan shows the date it will be removed (2026-10-04, added to production-plans spec). Plans and build steps record and show created / started / done / completed times (also added to the spec).",
+      "rationale": "User's call: completed plans are only useful briefly, and keeping them forever would grow plans.json without bound. Timestamps make a project returned to over weeks easier to follow. Checking only at start was the user's wording; the removal-date display and the rule that a long-running session does not remove plans mid-session were added by Claude to make the behaviour predictable."
+    },
+    {
+      "decision": "Upgrades (2026-10-04, task 5; full design in design/upgrades.md). Whether to start, convert or refuse is decided by manifest.json's integer formatVersion, not by the app version: an older build starts normally against data a newer build wrote, as long as it knows the format. writtenBy is only used to name versions in messages. Every change to what any file can contain, even one optional field, raises formatVersion by 1 and ships with a pure in-memory conversion step (N to N+1); the steps chain together. Conversion runs and validates entirely in memory, then copies all files to backups\\format A to B - <date time>\\ inside the data folder, then writes the result as one atomic commit (the commit marker can now also delete files). A fixture data folder per released format is kept in the repo forever, and a schema-snapshot test fails whenever the file shape changes without a format bump. The first release ships the whole mechanism with an empty list of steps. data-storage spec revised to match.",
+      "rationale": "User chose the format rule over the spec's original 'refuse anything written by a newer app version'. Under that rule, reinstalling the previous release after a bad update that did not change the format would be refused with no backup to fall back on. It is only safe if every shape change bumps the format, which the snapshot test enforces. User chose backups inside the data folder, so copying the folder is still a complete backup. Converting in memory before writing anything is what makes the spec's 'conversion that cannot be completed leaves the data as found' fall out for free."
+    },
+    {
+      "decision": "Development and layout (2026-10-04, task 6): the desktop app lives in this repository in its own top-level directory, desktop_app/. The old Angular/PHP app stays as it is in frontend/ and backend/. Every implementation task ships with tests: automated (Vitest for the TypeScript core and UI components, cargo test for the Rust file layer) wherever possible, and an explicit manual check for the user wherever something cannot be tested automatically, such as the format of real text pasted from the game, look and feel, or the installer. Each task in tasks.json states which is which. The app remembers no UI state between runs: it starts on the list of incomplete plans rather than reopening the plan last open (application-shell spec revised).",
+      "rationale": "User wants development to happen in this repo and wants verifiable progress: Claude runs the automated tests itself and asks the user only for what a test cannot cover. Dropping last-opened-plan memory removes the only piece of non-data state the app would have had to store somewhere."
+    }
+  ]
+}

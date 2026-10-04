@@ -65,9 +65,9 @@
 
         <div class="results-columns">
           <section>
-            <h2>Used Materials</h2>
-            @if (usedMaterials().length === 0) {
-              <p>No materials used.</p>
+            <h2>Used Materials (from Hangar)</h2>
+            @if (intermediateUsageRows().length === 0) {
+              <p>No hangar stock used.</p>
             } @else {
               <table>
                 <thead>
@@ -80,7 +80,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  @for (row of usedMaterials(); track row.item_id) {
+                  @for (row of intermediateUsageRows(); track row.item_id) {
                     <tr>
                       <td>{{ row.item_name }}</td>
                       <td>{{ row.hangar_quantity }}</td>
@@ -122,6 +122,36 @@
             }
           </section>
         </div>
+
+        <section class="base-materials">
+          <h2>Base Materials to Acquire</h2>
+          @if (baseMaterialRows().length === 0) {
+            <p>No base materials needed.</p>
+          } @else {
+            <table>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>In Hangar</th>
+                  <th>Used</th>
+                  <th>Still Needed</th>
+                  <th>Remaining in Hangar</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of baseMaterialRows(); track row.item_id) {
+                  <tr>
+                    <td>{{ row.item_name }}</td>
+                    <td>{{ row.hangar_quantity }}</td>
+                    <td>{{ row.used_quantity }}</td>
+                    <td>{{ row.still_needed_quantity }}</td>
+                    <td>{{ row.remaining_in_hangar }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </section>
       </div>
     }
   }

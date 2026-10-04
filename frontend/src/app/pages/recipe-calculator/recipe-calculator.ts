@@ -71,15 +71,17 @@ export class RecipeCalculator implements OnInit {
    * Merges base_materials (already netted against the hangar) with hangar_usage
    * (gross demand for anything pasted into the hangar, base or intermediate) into
    * one "used materials" view: every base material that's needed, plus any
-   * intermediate the user already holds some of - never anything unused.
+   * intermediate the user already holds some of - never anything unused. Each
+   * row carries is_base_material so the two concepts can be split into
+   * separate tables for display.
    */
-  usedMaterials(): UsedMaterialRow[] {
+  private usedMaterials(): (UsedMaterialRow & { is_base_material: boolean })[] {
     const result = this.result();
     if (!result) {
       return [];
     }
 
-    const rows: UsedMaterialRow[] = [];
+    const rows: (UsedMaterialRow & { is_base_material: boolean })[] = [];
     const seen = new Set<number>();
 
     for (const usage of result.hangar_usage) {
@@ -95,6 +97,7 @@ export class RecipeCalculator implements OnInit {
         used_quantity: used,
         still_needed_quantity: usage.needed_quantity - used,
         remaining_in_hangar: usage.hangar_quantity - used,
+        is_base_material: usage.is_base_material,
       });
       seen.add(usage.item_id);
     }
@@ -111,10 +114,21 @@ export class RecipeCalculator implements OnInit {
         used_quantity: 0,
         still_needed_quantity: material.quantity,
         remaining_in_hangar: 0,
+        is_base_material: true,
       });
     }
 
     return rows;
+  }
+
+  /** True base materials (no recipe) still needed, net of hangar stock - the shopping list. */
+  baseMaterialRows(): UsedMaterialRow[] {
+    return this.usedMaterials().filter((row) => row.is_base_material);
+  }
+
+  /** Intermediates the user already holds hangar stock of, drawn down before crafting more. */
+  intermediateUsageRows(): UsedMaterialRow[] {
+    return this.usedMaterials().filter((row) => !row.is_base_material);
   }
 
   calculate(): void {

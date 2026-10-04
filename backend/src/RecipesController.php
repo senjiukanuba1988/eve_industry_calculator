@@ -95,6 +95,7 @@ final class RecipesController
             array_keys($result['hangar_usage'])
         ));
         $itemNames = $this->namesForItemIds($pdo, $itemIds);
+        $recipedItemIds = $this->itemIdsWithRecipes($pdo, $itemIds);
 
         $baseMaterials = [];
         foreach ($result['base_materials'] as $itemId => $quantity) {
@@ -130,6 +131,7 @@ final class RecipesController
                 'item_name' => $itemNames[$itemId] ?? null,
                 'hangar_quantity' => $usage['hangar_quantity'],
                 'needed_quantity' => $usage['needed_quantity'],
+                'is_base_material' => !isset($recipedItemIds[$itemId]),
             ];
         }
         usort($hangarUsage, fn ($a, $b) => strcmp((string) $a['item_name'], (string) $b['item_name']));
@@ -419,6 +421,33 @@ final class RecipesController
         }
 
         return $names;
+    }
+
+    /**
+     * Derives which of the given items have a recipe, i.e. are producible
+     * intermediates rather than true base materials. An item with no recipe
+     * (and thus is_base_material) also flags items expected to have one but
+     * don't yet.
+     *
+     * @param array<int,int> $itemIds
+     * @return array<int,true> item_id => true, for every item that has a recipe
+     */
+    private function itemIdsWithRecipes(PDO $pdo, array $itemIds): array
+    {
+        if ($itemIds === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($itemIds), '?'));
+        $stmt = $pdo->prepare("SELECT DISTINCT product_item_id FROM recipes WHERE product_item_id IN ({$placeholders})");
+        $stmt->execute(array_values($itemIds));
+
+        $ids = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $ids[(int) $row['product_item_id']] = true;
+        }
+
+        return $ids;
     }
 
     /**

@@ -4,7 +4,7 @@ Things explicitly deferred from current goals - not forgotten, just out of scope
 
 ## Reaction recipe rounding (fractional per-run quantities)
 
-**Status:** Out of scope for `2_material_summary` and `5_make_production_ready` (declared 2026-08-02).
+**Status:** RESOLVED (2026-10-04, desktop_application spec review) - won't fix. Pre-rounded-up integer quantities are the permanent approach: the user wants every calculation to be a worst case, so rounding errors only ever mean using slightly less than planned. The fix options below are kept for history only. (Previously: out of scope for `2_material_summary` and `5_make_production_ready`, declared 2026-08-02.)
 
 Facility bonuses make per-run reaction material consumption non-integer (e.g. Tungsten Carbide's base recipe of 100 Rolled Tungsten Alloy + 100 Sulfuric Acid -> 10000 output actually consumes 97.8 of each per run in a bonused facility). `recipe_inputs.input_quantity` is an integer column, so today these are stored pre-rounded-up to the nearest integer (e.g. 98), which:
 

@@ -1,0 +1,291 @@
+{
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Write the product specification (no technical content)",
+      "description": "Interview the user on what the desktop application should do and how it should work from their point of view, then write it up in the OpenSpec convention under openspec/ in this goal directory: a project context document plus one spec per capability, each with SHALL requirements illustrated by WHEN/THEN scenarios.",
+      "status": "done",
+      "priority": "high",
+      "created": "2026-10-03",
+      "completed_at": "2026-10-03",
+      "notes": "Seven capabilities written: application-shell, item-catalog, recipe-library, material-calculation, hangar, production-plans, data-storage, plus openspec/project.md and openspec/README.md. README.md carries a what-changed-vs-the-web-version table and a list of nine decisions that were derived from the interview rather than stated outright, for the user to check."
+    },
+    {
+      "id": 2,
+      "title": "Review and sign off the specification",
+      "description": "User reads openspec/ end to end and either confirms it or corrects it. Particular attention to the nine derived decisions listed at the bottom of openspec/README.md - recipe-vs-blueprint wording, whether a hangar reset should also clear steps already marked done, mandatory distinct T2 variant labels, refusing to delete a recipe an open plan targets, Acquire entries not being tickable, a fixed rather than chosen data folder, pastes storing nothing before recipes exist, cycle detection on save, and the single-window layout being Claude's choice. Nothing downstream should start until this is settled.",
+      "status": "done",
+      "priority": "high",
+      "created": "2026-10-03",
+      "completed_at": "2026-10-04",
+      "notes": "Signed off 2026-10-04 after a review pass. Claude fixed the clear-cut contradictions itself, then the user decided the open points one by one. Outcomes: started steps are fixed in place, recording their figures, and their output counts as on its way; done steps go to a collapsed section; in a reserved plan, finished output goes to the pile only up to what the plan needs, with batch surplus going to general stock; a reserved plan draws only on its pile, and editing or deleting a recipe it uses or changing its variant choice releases the reservation after a warning; reserving stays all-or-nothing, and inputs leave the pile when a step starts; a hangar reset clears started and done steps of incomplete plans but leaves completed plans alone; a fourth sidebar section, Items; the target product is never netted against stock, so a plan completes only when its final step is done; no buy-instead-of-build; plan size is entered in runs and fixed at creation; one recipe type per product, and adding a second T2 variant asks for both labels in place; stock of an item no recipe uses any more stays and is flagged; an item holding stock cannot be deleted; no manual add-item action, since a typed paste line does the job; fractional quantities permanently out of scope; data records the app version that wrote it; malformed or newer-version data shows an error and the app does not start against it; only one copy runs at a time; hand edits only while the app is closed."
+    },
+    {
+      "id": 3,
+      "title": "Choose the tech stack",
+      "description": "Decide how the desktop application is built and packaged for Windows, judged against the signed-off specification. Weigh reuse of the existing Angular UI work against a fresh start, and factor in the data-storage requirements (readable files, automatic migration on upgrade) and the user's Docker-only development setup. Record the choice and the reasoning as a key decision on this goal.",
+      "status": "done",
+      "priority": "high",
+      "created": "2026-10-03",
+      "completed_at": "2026-10-04",
+      "notes": "User delegated the choice to Claude. Chosen: Tauri 2 + React + TypeScript + Vite; domain logic in TypeScript behind a storage interface, with a thin Rust file layer; native Windows toolchain, not Docker. Full reasoning is in goal.json key_decisions."
+    },
+    {
+      "id": 4,
+      "title": "Design the data file format and folder layout",
+      "description": "Settle the concrete shape of what data-storage/spec.md describes in behavioural terms: which files exist, what format each uses (the user ruled out anything not human-readable and suggested CSV, XML or YAML), how items, categories, recipes, hangar stock and plans are laid out across them, and how a file identifies which application version wrote it so migration and the refuse-to-open-newer-data rule can work.",
+      "status": "done",
+      "completed_at": "2026-10-04",
+      "notes": "Design written to design/data-files.md and decisions recorded in goal.json (2026-10-04). Spec updated: production-plans gained 'Completed plans are removed after a week' and 'Plans and steps show when things happened'. User reviewed and accepted the design, including Claude's calls on removal-only-at-start, showing the removal date, the 'EVE' spelling, missing-file-is-an-error, local-time-with-offset timestamps, and dangling references in stored steps being allowed.",
+      "priority": "high",
+      "created": "2026-10-03"
+    },
+    {
+      "id": 5,
+      "title": "Design the upgrade and migration mechanism",
+      "description": "Work out how a newly installed build detects an older data layout, converts it, keeps the pre-conversion copy, and reports what it did - and how it refuses to touch data written by a newer build. This is the concrete answer to the user's 'a way to patch it without losing the data' requirement.",
+      "status": "done",
+      "completed_at": "2026-10-04",
+      "notes": "Design in design/upgrades.md, decision recorded in goal.json. User decided: refuse by format version rather than app version (data-storage spec revised: new scenarios for going back to an older build, with or without a format change), and backups inside the data folder. data-files.md cross-references it, and its commit protocol gained file deletion for conversions.",
+      "priority": "medium",
+      "created": "2026-10-03"
+    },
+    {
+      "id": 6,
+      "title": "Break the implementation into tasks",
+      "description": "Once stack, file format and migration approach are decided, decompose the implementation capability by capability and add the resulting tasks to this file. Suggested order follows the dependency chain: item catalog, then recipe library, then the calculation engine, then the hangar, then production plans, with the application shell growing alongside them.",
+      "status": "done",
+      "priority": "high",
+      "created": "2026-10-03",
+      "completed_at": "2026-10-04",
+      "notes": "Broken down into tasks 8-33, listed in working order. Every implementation task carries a 'Testing:' section: automated tests (Vitest, cargo test) wherever possible, and explicit manual checks for the user where something cannot be tested that way. The application-shell spec lost 'reopen the plan last open' during this review: the app starts on the list of incomplete plans and remembers no UI state between runs."
+    },
+    {
+      "id": 7,
+      "title": "Decide the fate of the existing Angular/PHP/Docker application",
+      "description": "Once the desktop app covers the specification, decide whether the frontend/, backend/, docker-compose.yml and scripts/ parts of the repository are removed, archived on a branch, or kept running alongside. (5_make_production_ready, which was about hardening the container setup, was already closed as superseded on 2026-10-04.)",
+      "status": "done",
+      "priority": "medium",
+      "created": "2026-10-03",
+      "completed_at": "2026-10-04",
+      "notes": "Decided 2026-10-04: leave the old app exactly as it is in frontend/ and backend/ for now. The new app gets its own top-level directory, desktop_app/, in this repository. Revisit only if the user raises it."
+    },
+    {
+      "id": 8,
+      "title": "Install the Windows development toolchain",
+      "description": "Install Node LTS, Rust (rustup, stable, MSVC target) and the Visual Studio Build Tools with the 'Desktop development with C++' workload on the Windows host. WebView2 ships with Windows 11. The user runs the installers; Claude gives the exact steps.\n\nTesting: manual by the user, then verified by Claude: `node -v`, `npm -v`, `rustc -V` and `cargo -V` all answer from a fresh terminal.",
+      "status": "done",
+      "priority": "high",
+      "created": "2026-10-04",
+      "completed_at": "2026-10-04",
+      "notes": "Installed via winget: Visual Studio Build Tools 2022 17.14 (VCTools workload, MSVC x64 verified with vswhere), rustup 1.29.1 -> rustc/cargo 1.99.0 on stable-x86_64-pc-windows-msvc, Node 24.19.0 LTS / npm 11.17.0. WebView2 154 was already present. winget run through Claude Code's `!` prefix cannot answer prompts: add `--source winget --accept-source-agreements --accept-package-agreements`, otherwise it fails with 0x8a150042 on the msstore terms prompt."
+    },
+    {
+      "id": 9,
+      "title": "Scaffold the Tauri app in desktop_app/",
+      "description": "Create the Tauri 2 + React + TypeScript + Vite project in desktop_app/ at the repository root, beside the old frontend/ and backend/. Add Vitest, ESLint and the Tauri single-instance plugin, which brings the open window to the front on a second launch. Folder layout separates the domain core (pure TypeScript, no UI or I/O), the storage interface and its adapters, and the UI. One source of truth for the app version. npm scripts: dev (desktop window), dev:browser (plain browser using the browser storage adapter), test, lint, build. Add desktop_app/node_modules and desktop_app/src-tauri/target to .gitignore.\n\nTesting: automated - a trivial Vitest test and a cargo test run green, and lint passes. Manual (user) - `npm run dev` opens a window; starting it a second time brings the first window to the front instead of opening another.",
+      "status": "done",
+      "priority": "high",
+      "created": "2026-10-04",
+      "completed_at": "2026-10-04",
+      "notes": "Scaffolded with create-tauri-app (react-ts), then reworked: identifier de.senjiu.eve-industry-calculator (confirmed by the user; must not change after the first real release), productName 'EVE Industry Calculator', NSIS bundle target. Version lives only in package.json (tauri.conf.json uses \"version\": \"../package.json\", the UI gets it via a Vite define). Layout src/core, src/storage, src/ui; ESLint no-restricted-imports keeps core free of UI/storage/React/Tauri and storage free of UI. Scripts: dev, dev:browser, test (vitest + cargo test), lint (tsc -b + eslint + clippy -D warnings), build, build:web. Automated: 4 Vitest + 1 cargo test green, lint clean. Manual (user): window opens, second launch exits at once and brings the existing window to the front. Note: the dev binary is target/debug/eve_industry_calculator.exe (crate name); mainBinaryName only applies to the bundle. Root .gitignore unchanged - the nested .gitignore files already exclude node_modules, target and gen/schemas."
+    },
+    {
+      "id": 10,
+      "title": "Data model, serialisation and load-time validation",
+      "description": "Implement design/data-files.md in the domain core: TypeScript types for manifest/items/recipes/hangar/plans. A serialiser that pretty-prints with two-space indentation, fixed key order, alphabetical maps, omitted optional fields, LF endings and a trailing newline. A JSON reader that rejects repeated keys and reports line numbers. Full validation of every rule listed under 'Validation on load', producing file + line (or data path) + expected-vs-found errors.\n\nTesting: automated - round trip (parse then serialise is byte-identical); every validation rule has a failing-input test asserting the file, line and message; the repeated-key test; CRLF input accepted.",
+      "status": "todo",
+      "priority": "high",
+      "created": "2026-10-04"
+    },
+    {
+      "id": 11,
+      "title": "Storage layer: file commands, atomic commit, browser adapter",
+      "description": "Thin Rust commands: read file, write and flush file, rename, delete, list, copy, resolve Documents via the Windows known-folder API, and open a folder in Explorer, with retry and backoff on rename for OneDrive locks. In TypeScript, behind the storage interface: the commit protocol from data-files.md (tmp files, commit.json as the commit point, renames, replace + delete lists) and start-up recovery (roll forward / discard). A browser storage adapter for dev:browser.\n\nTesting: automated - the commit protocol and recovery run against an in-memory fake file system, simulating a crash after every individual operation and asserting the folder always ends up wholly before or wholly after; cargo tests for the Rust commands against a temp directory. Manual (user) - none expected.",
+      "status": "todo",
+      "priority": "high",
+      "created": "2026-10-04"
+    },
+    {
+      "id": 12,
+      "title": "Start-up sequence and data conversion framework",
+      "description": "Implement design/upgrades.md: create the folder on first start; read the manifest; start, convert or refuse by formatVersion; a conversion-step chain (empty for format 1) run in memory and validated; backup to backups\\format A to B - <date time>\\; commit; the one-off conversion message; the refuse-newer and malformed-data error screens, with 'open data folder' and 'try again'. Add the format-1 fixture data folder and the schema-snapshot guard test.\n\nTesting: automated - every start-up test listed in upgrades.md, using a test-only fake conversion step to exercise the convert path; malformed data leaves files byte-identical. Manual (user) - hand-break a file while the app is closed and check that the error names the right file and line, then fix it and press try again.",
+      "status": "todo",
+      "priority": "high",
+      "created": "2026-10-04"
+    },
+    {
+      "id": 13,
+      "title": "Application shell",
+      "description": "One window: a sidebar with Plans / Recipes / Hangar / Items, and a main panel that keeps each section's state while switching within a session (nothing is remembered across restarts). The start-up landing pages from application-shell/spec.md (list of incomplete plans / create-a-plan / create-your-first-recipe). A data-folder panel with the full path, an open-folder button and the 'edit files only while the app is closed' note. Shared building blocks: a confirmation dialog that states the consequences, failures explained in place without losing input, and the app-state pattern where each action computes the new data in memory, commits it in one atomic write, and only then updates the screen.\n\nTesting: automated - component tests for landing-page selection and confirmation dialogs; an action that fails to commit leaves the in-memory state unchanged. Manual (user) - look and feel of the layout, and section switching keeping its place.",
+      "status": "todo",
+      "priority": "high",
+      "created": "2026-10-04"
+    },
+    {
+      "id": 14,
+      "title": "Categories",
+      "description": "Create, rename and delete categories in the Items section, with uniqueness ignoring case and whitespace, and refusing to delete a category that is in use (stating the count, and offering to move its items out first).\n\nTesting: automated - domain tests for every item-catalog category scenario; a component test for the delete-refused flow.",
+      "status": "todo",
+      "priority": "high",
+      "created": "2026-10-04"
+    },
+    {
+      "id": 15,
+      "title": "Items section",
+      "description": "Item list with category, filter by category, and search by part of the name. Rename, which cascades through recipes, hangar and plans (targets, variant choices, reserved piles, step snapshots) in one commit, and rejects a name already in use. Change an item's category. Delete, refused while a recipe references the item (naming the recipes) or while it holds stock (stating the quantity).\n\nTesting: automated - domain tests for every item-catalog item scenario, including a rename asserting every file's content afterwards. Manual (user) - a quick pass over the list and its filters.",
+      "status": "todo",
+      "priority": "high",
+      "created": "2026-10-04"
+    },
+    {
+      "id": 16,
+      "title": "Recipe validation rules",
+      "description": "Domain-core validation for saving a recipe: at least one input; positive whole quantities; no self-consumption; duplicate inputs detected so they can be offered for combining; one recipe per product except T2 Manufacturing; distinct non-empty variant labels when there are several; one recipe type per product; cycle detection that returns the chain (A to B to C to A).\n\nTesting: automated - one test per recipe-library validation scenario, plus cycle cases of length 2, 3 and through a T2 variant.",
+      "status": "todo",
+      "priority": "high",
+      "created": "2026-10-04"
+    },
+    {
+      "id": 17,
+      "title": "Item autocomplete with inline create",
+      "description": "A reusable item-name field: suggestions matching part of the name while typing, each shown with its category; choosing one binds the field to that item; when nothing matches, offer to create the item with an optional category, without leaving the form. Keyboard-driven (arrows, Enter, Escape).\n\nTesting: automated - component tests for matching, binding, inline creation and keyboard handling. Manual (user) - how fast and comfortable it is to type with, since that is where most typing happens.",
+      "status": "todo",
+      "priority": "high",
+      "created": "2026-10-04"
+    },
+    {
+      "id": 18,
+      "title": "Recipe form",
+      "description": "Create and edit recipes: product, type, variant label, output quantity, notes and input rows, all using the item autocomplete. Saving is unavailable while any field is unbound, with the unresolved rows marked. Duplicate input rows can be combined. Adding a second T2 variant when the first has no label asks for both labels in place and saves both together. Validation messages are shown at the offending field.\n\nTesting: automated - component tests for unresolved rows blocking save, combining duplicates, the second-variant labelling flow, and messages appearing at the right field. Manual (user) - entering a few real recipes end to end.",
+      "status": "todo",
+      "priority": "high",
+      "created": "2026-10-04"
+    },
+    {
+      "id": 19,
+      "title": "Recipes section list",
+      "description": "List recipes with product, variant label, type and output per run; filter by type and by product category; search by part of the product name. Open a recipe in the form. Delete a recipe no plan uses (deleting one that plans use is task 30).\n\nTesting: automated - domain tests for the filters and search; a component test for delete with confirmation. Manual (user) - a quick look at the list.",
+      "status": "todo",
+      "priority": "high",
+      "created": "2026-10-04"
+    },
+    {
+      "id": 20,
+      "title": "Calculation engine",
+      "description": "The material-calculation spec as pure domain code. Inputs: recipes, a target recipe and run count, available material, variant choices, and the plan's started and done steps. Covers recursive expansion to base materials with consolidated totals; whole runs; leftover shared within one calculation; netting against available material at every tier, never against the target product; started steps' output counted as already on its way; dependency build order with a stable order within a tier; and a 'variant choice needed' result instead of a guess or a failure. Output: Acquire entries, Build entries and base material totals, including fully covered materials.\n\nTesting: automated - every material-calculation scenario as a test, the 'reserving across tiers' X/y/z example from production-plans, deep multi-tier fixtures modelled on real T2/PI/reaction chains, and stability of the build order across repeated runs.",
+      "status": "todo",
+      "priority": "high",
+      "created": "2026-10-04"
+    },
+    {
+      "id": 21,
+      "title": "Calculation explanation",
+      "description": "Extend the engine so every step and material carries its trace: the total demand, which parts of the tree it came from, how much was covered by available material, the run count it rounds up to, and the leftover. This feeds the 'why is this number what it is' view in the plan.\n\nTesting: automated - the trace for the 'tracing a quantity' scenario and for a shared-batch case adds up exactly to the reported figures.",
+      "status": "todo",
+      "priority": "medium",
+      "created": "2026-10-04"
+    },
+    {
+      "id": 22,
+      "title": "Hangar paste reader",
+      "description": "Parse pasted inventory/assets text: the first token made only of digits, dots and commas is the quantity, the text before it is the name, the rest is ignored. Keep only items some recipe references, as input or product. Produce the summary of what was added (with quantities), ignored (not used by any recipe) and skipped (no quantity). Pasting adds to existing stock.\n\nTesting: automated - every hangar paste scenario, including tab-separated inventory lines, assets lines with trailing columns, names containing digits (F77 Compact Co-Processor), thousands separators, and pasting twice. Manual (user) - paste real text copied from the game's inventory and assets windows, since its exact format can only be checked against the game.",
+      "status": "todo",
+      "priority": "high",
+      "created": "2026-10-04"
+    },
+    {
+      "id": 23,
+      "title": "Hangar section",
+      "description": "Table of held items with available / reserved / total and the plans holding the reserved part; search and category filter. Correct an available quantity by hand; remove an item's stock. Reserved quantities are not editable, with an explanation naming the plan and an offer to release it. Items no recipe references any more are flagged. The paste dialog and its summary.\n\nTesting: automated - domain tests for corrections and removal, and for the available/reserved/total figures with reservations from several plans. Manual (user) - the paste-and-summary flow with real game text.",
+      "status": "todo",
+      "priority": "high",
+      "created": "2026-10-04"
+    },
+    {
+      "id": 24,
+      "title": "Creating and managing plans",
+      "description": "Create a plan from a target recipe (choosing the variant where there are several) and a run count, with a suggested name such as '80 Flycatchers'; the target and runs are fixed after creation. Rename. Plans list showing open plans by default, with completed plans available separately. Delete with confirmation: the reserved pile returns to stock, consumed inputs stay spent, produced output stays.\n\nTesting: automated - domain tests for creation, the name suggestion, rename, and deleting a reserved plan with started and done steps (the production-plans scenario). Manual (user) - creating a plan from the UI.",
+      "status": "todo",
+      "priority": "high",
+      "created": "2026-10-04"
+    },
+    {
+      "id": 25,
+      "title": "Plan view",
+      "description": "The checklist: Acquire entries first (not tickable), Build entries in dependency order with the target last, showing recipe, runs, output and leftover; done steps in a collapsed section; the 'which variant?' prompt, visible variant choices that can be changed, and flagged invalid choices; created/started/done/completed times; the removal date on completed plans; the per-step and per-material 'why' view from task 21. Recalculates continuously, with no recalculate button.\n\nTesting: automated - component tests for entry ordering, the collapsed done section, the variant prompt, and Acquire entries disappearing when stock arrives. Manual (user) - work through a real plan and judge readability and density.",
+      "status": "todo",
+      "priority": "high",
+      "created": "2026-10-04"
+    },
+    {
+      "id": 26,
+      "title": "Step transitions",
+      "description": "Start (deduct inputs from the reserved pile or general stock, record the snapshot and the start time, warn on shortfall listing items and amounts, clamp at zero, record the shortfall). Done (add output: all to general stock if unreserved; up to the plan's need into the pile and the batch surplus to general stock if reserved). Done without starting (offer to deduct and record output in one action, or record output only). Revert done to started and started to not started, returning exactly what was moved, clamping at zero and recording what could not be removed. Every transition is a single atomic commit.\n\nTesting: automated - every step scenario in production-plans (starting a reaction, a reserved start, starting short, declining the warning, batch surplus, completing without starting, all revert cases, a recipe edited while a step is started).",
+      "status": "todo",
+      "priority": "high",
+      "created": "2026-10-04"
+    },
+    {
+      "id": 27,
+      "title": "Reservations",
+      "description": "Reserve only when nothing is left to acquire (otherwise list what is missing and by how much); move the exact quantities needed, intermediates included, into the plan's pile; a reserved plan draws only on its pile; other plans and the hangar see only general stock. Release returns the whole pile. Changing a variant choice on a reserved plan warns, then releases.\n\nTesting: automated - every reservation scenario in production-plans, including reserving across tiers, another plan seeing less, components counting towards the reservation, releasing mid-project, and the variant-change release.",
+      "status": "todo",
+      "priority": "high",
+      "created": "2026-10-04"
+    },
+    {
+      "id": 28,
+      "title": "Finishing plans and seven-day removal",
+      "description": "A plan completes exactly when its final build step is marked done: the completion time is recorded and the whole pile, finished product included, goes to general stock. Holding the target product in stock never completes a plan. On every start, plans completed more than seven days ago are removed in one commit, with the hangar untouched; completed plans show their removal date.\n\nTesting: automated - the finishing-a-plan scenarios; removal at 6 days 23 hours (kept) vs 7 days 1 hour (removed) using an injected clock; removal does not happen mid-session.",
+      "status": "todo",
+      "priority": "high",
+      "created": "2026-10-04"
+    },
+    {
+      "id": 29,
+      "title": "Hangar reset",
+      "description": "Reset clears all stock, releases every reservation, and clears started and done steps (and their times) of incomplete plans; completed plans are untouched. Never refused; the confirmation states exactly what will be lost.\n\nTesting: automated - the hangar reset scenarios, including completed plans untouched and picking a plan back up after a reset and fresh paste. Manual (user) - read the confirmation text.",
+      "status": "todo",
+      "priority": "medium",
+      "created": "2026-10-04"
+    },
+    {
+      "id": 30,
+      "title": "Recipe changes that affect plans",
+      "description": "Saving an edited recipe used by incomplete plans names them and asks for confirmation; reserved ones are named as being released. Deleting a recipe targeted by an incomplete plan is refused, naming the plans. Deleting a recipe used as an intermediate states the consequence (becomes a base material, or another variant must be chosen) and releases reservations. Adding a second T2 variant writes explicit variant choices into the plans that were implicitly using the first one, in the same commit.\n\nTesting: automated - every 'changing a recipe that plans depend on' scenario, plus 'a second variant is added later' and 'a remembered choice becomes invalid' from material-calculation.",
+      "status": "todo",
+      "priority": "high",
+      "created": "2026-10-04"
+    },
+    {
+      "id": 31,
+      "title": "Jumping between related things",
+      "description": "Direct links from a recipe to a new plan for it, from a plan step to its recipe, and from a material to its hangar stock, plus 'create a recipe for this' on any base material shown in a plan (item-catalog: missing recipes are visible).\n\nTesting: automated - component tests that each link opens the right section and object. Manual (user) - whether the links are where you would reach for them.",
+      "status": "todo",
+      "priority": "medium",
+      "created": "2026-10-04"
+    },
+    {
+      "id": 32,
+      "title": "Windows installer and versioning",
+      "description": "Build a Windows installer with Tauri's bundler. App icon. The version shown in the app matches manifest writtenBy. The uninstaller leaves Documents\\EVE Industry Calculator alone and says where it is. Document the release steps (bump the version; bump formatVersion and add a conversion step if any file's shape changed).\n\nTesting: automated - the build succeeds and produces an installer. Manual (user) - install, use, install a newer build over it and check the data is intact, uninstall and check the folder remains and the message appears.",
+      "status": "todo",
+      "priority": "high",
+      "created": "2026-10-04"
+    },
+    {
+      "id": 33,
+      "title": "Acceptance pass against the specification",
+      "description": "Walk every scenario in openspec/specs/ against the finished app. List each as covered by an automated test, checked manually, or a gap; fix the gaps. Then the user re-enters their real recipe data and works a real plan.\n\nTesting: this task is the testing - Claude produces the scenario-by-scenario checklist and the user does the manual items on it.",
+      "status": "todo",
+      "priority": "high",
+      "created": "2026-10-04"
+    }
+  ],
+  "next_session_suggestions": [
+    "Task 8: install Node LTS, Rust and the Visual Studio Build Tools on the Windows host (Claude gives the steps, the user runs the installers).",
+    "Task 9: scaffold desktop_app/ and get a window, the browser dev mode, Vitest and cargo test all running.",
+    "Then tasks 10-12 (data model, storage layer, start-up/conversion) - the data foundation everything else sits on."
+  ]
+}
