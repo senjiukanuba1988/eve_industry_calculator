@@ -1,32 +1,227 @@
 :root {
   font-family: "Segoe UI", system-ui, sans-serif;
-  font-size: 14px;
+  font-size: 13px;
   color: #1f2328;
   background-color: #f6f8fa;
+
+  --border: #d0d7de;
+  --muted: #656d76;
+  --accent: #0969da;
+  --danger: #b42318;
+  --sidebar-bg: #24292f;
+  --sidebar-fg: #d1d9e0;
 }
 
-body {
+html,
+body,
+#root {
+  height: 100%;
   margin: 0;
-}
-
-main {
-  padding: 16px;
 }
 
 button {
   font: inherit;
-  padding: 3px 10px;
+  padding: 2px 10px;
+}
+
+input,
+select {
+  font: inherit;
+  padding: 1px 4px;
 }
 
 code {
   font-family: Consolas, monospace;
 }
 
+h1 {
+  font-size: 16px;
+  margin: 0 0 8px;
+}
+
+p {
+  margin: 6px 0;
+}
+
+.muted {
+  color: var(--muted);
+}
+
 .actions {
   display: flex;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 10px;
 }
+
+.toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+/* --- Shell ------------------------------------------------------------- */
+
+.shell {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  height: 100%;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: var(--sidebar-bg);
+  color: var(--sidebar-fg);
+  padding: 6px 0;
+}
+
+.sidebar ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Twice the height of a plain row and 1.5x the text: the sidebar has room to spare vertically. */
+.sidebar button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  min-height: 54px;
+  font-size: 1.5em;
+  padding: 0 12px;
+  border: 0;
+  border-left: 3px solid transparent;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sidebar button:hover {
+  background: rgb(255 255 255 / 0.06);
+}
+
+.sidebar button[aria-current="page"] {
+  border-left-color: var(--accent);
+  background: rgb(255 255 255 / 0.1);
+  color: #fff;
+}
+
+.sidebar .count {
+  color: #8c959f;
+  font-variant-numeric: tabular-nums;
+}
+
+.sidebar .version {
+  padding: 4px 15px 0;
+  font-size: 11px;
+  color: #8c959f;
+}
+
+.main {
+  overflow: auto;
+  padding: 10px 14px;
+}
+
+/* --- Tables ------------------------------------------------------------ */
+
+table.grid {
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid var(--border);
+}
+
+table.grid th,
+table.grid td {
+  padding: 2px 8px;
+  border-bottom: 1px solid #eaeef2;
+  text-align: left;
+  white-space: nowrap;
+}
+
+table.grid th {
+  position: sticky;
+  top: -10px;
+  background: #f0f3f6;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+
+table.grid tbody tr:nth-child(even) {
+  background: #fafbfc;
+}
+
+table.grid .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Messages ---------------------------------------------------------- */
+
+.failure {
+  color: var(--danger);
+  border-left: 3px solid var(--danger);
+  padding-left: 8px;
+}
+
+.warning {
+  border-left: 3px solid #d4a72c;
+  padding-left: 8px;
+}
+
+button.link {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.notice {
+  border: 1px solid #54aeff;
+  background: #ddf4ff;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+}
+
+/* --- Confirmation dialog ---------------------------------------------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgb(0 0 0 / 0.35);
+}
+
+.modal {
+  max-width: 480px;
+  background: #fff;
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.2);
+  padding: 12px 16px;
+}
+
+.modal h2 {
+  font-size: 15px;
+  margin: 0 0 6px;
+}
+
+.consequences {
+  margin: 0;
+  padding-left: 20px;
+}
+
+button.danger {
+  color: #fff;
+  background: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+/* --- Start-up ---------------------------------------------------------- */
 
 .startup-loading,
 .startup-error {
@@ -36,19 +231,220 @@ code {
 
 .startup-error h1 {
   font-size: 18px;
-  color: #b42318;
+  color: var(--danger);
 }
 
 .startup-errors {
   font-family: Consolas, monospace;
   background: #fff;
-  border: 1px solid #d0d7de;
+  border: 1px solid var(--border);
   padding: 8px 8px 8px 28px;
 }
 
-.notice {
-  border: 1px solid #54aeff;
+/* --- Items section ----------------------------------------------------- */
+
+.items-layout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+h2 {
+  font-size: 14px;
+  margin: 0 0 6px;
+}
+
+.row-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.inline-form {
+  display: flex;
+  gap: 6px;
+}
+
+/* --- Item field (autocomplete) ---------------------------------------- */
+
+.item-field {
+  position: relative;
+  display: inline-block;
+}
+
+.item-field input {
+  width: 260px;
+}
+
+.item-field[data-bound] input {
+  border-color: #1a7f37;
+  background: #f6fff8;
+}
+
+input[aria-invalid] {
+  border-color: var(--danger);
+  background: #fff5f5;
+}
+
+.item-suggestions {
+  position: absolute;
+  z-index: 10;
+  left: 0;
+  top: 100%;
+  min-width: 100%;
+  max-height: 280px;
+  overflow-y: auto;
+  margin: 1px 0 0;
+  padding: 0;
+  list-style: none;
+  background: #fff;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.15);
+}
+
+.item-suggestions li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 2px 8px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.item-suggestions li[aria-selected="true"] {
   background: #ddf4ff;
+}
+
+.item-create {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  padding: 4px 6px;
+  background: #fff8c5;
+  border: 1px solid #d4a72c;
+}
+
+/* --- Recipe form ------------------------------------------------------- */
+
+.recipe-form h2 {
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.recipe-form h3 {
+  font-size: 13px;
+  margin: 12px 0 4px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: max-content max-content;
+  gap: 6px 12px;
+  align-items: baseline;
+}
+
+.form-grid > label,
+.form-grid > .label {
+  font-weight: 600;
+}
+
+.recipe-form input.quantity {
+  width: 90px;
+  text-align: right;
+}
+
+.recipe-form table.inputs td {
+  vertical-align: top;
+  white-space: normal;
+}
+
+.field-problem {
+  color: var(--danger);
+  font-size: 12px;
+  margin-top: 2px;
+  max-width: 420px;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 12px;
+  max-width: 420px;
+  margin: 2px 0 0;
+}
+
+.recipe-form .notes {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+.recipe-form .notes textarea {
+  font: inherit;
+  font-weight: normal;
+  width: 420px;
+}
+
+/* --- Hangar ------------------------------------------------------------ */
+
+.panel-box {
+  background: #fff;
+  border: 1px solid var(--border);
   padding: 8px 12px;
-  margin: 8px 0;
+  margin-bottom: 10px;
+  max-width: 900px;
+}
+
+.panel-box textarea {
+  font-family: Consolas, monospace;
+  font-size: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.panel-box h3 {
+  font-size: 13px;
+  margin: 6px 0 4px;
+}
+
+.summary-columns {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.skipped-lines {
+  margin: 0;
+  padding-left: 18px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.tag {
+  margin-left: 8px;
+  padding: 0 5px;
+  font-size: 11px;
+  color: #9a6700;
+  background: #fff8c5;
+  border: 1px solid #d4a72c;
+  border-radius: 3px;
+}
+
+input.quantity {
+  width: 90px;
+  text-align: right;
+}
+
+tr.detail-row td {
+  white-space: normal;
+  background: #f6f8fa;
+}
+
+tr.detail-row ul {
+  margin: 2px 0;
+  padding-left: 18px;
 }

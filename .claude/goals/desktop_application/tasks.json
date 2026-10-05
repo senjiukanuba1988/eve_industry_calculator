@@ -124,89 +124,110 @@
       "id": 13,
       "title": "Application shell",
       "description": "One window: a sidebar with Plans / Recipes / Hangar / Items, and a main panel that keeps each section's state while switching within a session (nothing is remembered across restarts). The start-up landing pages from application-shell/spec.md (list of incomplete plans / create-a-plan / create-your-first-recipe). A data-folder panel with the full path, an open-folder button and the 'edit files only while the app is closed' note. Shared building blocks: a confirmation dialog that states the consequences, failures explained in place without losing input, and the app-state pattern where each action computes the new data in memory, commits it in one atomic write, and only then updates the screen.\n\nTesting: automated - component tests for landing-page selection and confirmation dialogs; an action that fails to commit leaves the in-memory state unchanged. Manual (user) - look and feel of the layout, and section switching keeping its place.",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
-      "created": "2026-10-04"
+      "created": "2026-10-04",
+      "notes": "Manual check by the user 2026-10-04: window, landing page and section switching fine. User asked for sidebar entries 100% taller (y only) and text 50% bigger: now min-height 54px, font-size 1.5em, sidebar widened 140 -> 180px so labels and counts fit (Claude's call). User may want more colour later; main panels to be judged once they have real content. app/store.ts: DataStore - apply(change) runs in the shared write queue, computes new data in memory (or refuse(reason)), serialises all files, commits only those that differ plus manifest.json with writtenBy = this build, re-validates the texts with loadData before writing (never writes data the next start would refuse), and only then updates current data and notifies subscribers. Failed commit -> state unchanged, status failed; CommitError.committed -> adopted with a warning. app/oneAtATime.ts gained createQueue(); main.tsx shares one queue between start-up and the store. ui/context.ts: StoreContext, useAppData (useSyncExternalStore), useAction (failure/warning kept for showing in place), NavigationContext/useGoTo, ConfirmContext/useConfirm. ui/ConfirmDialog.tsx (alertdialog, consequences list, action-named confirm button, Cancel focused, Escape cancels). ui/Failure.tsx. ui/Shell.tsx: 140px dark sidebar with counts (Plans = open plans, Recipes, Hangar, Items) plus Data folder and version at the foot; all sections stay mounted and are hidden, so switching keeps their state. Plans landing per spec: open plans table / recipes table with no open plans (user's preference matched this: 'just the list of recipes') / explanation + Create the first recipe button. Recipes, Hangar and Items show simple read-only tables as placeholders until their tasks; Items has a search box. User gave no layout preferences up front: Claude builds, user requests changes. 200 Vitest tests green, lint clean.",
+      "completed_at": "2026-10-04"
     },
     {
       "id": 14,
       "title": "Categories",
       "description": "Create, rename and delete categories in the Items section, with uniqueness ignoring case and whitespace, and refusing to delete a category that is in use (stating the count, and offering to move its items out first).\n\nTesting: automated - domain tests for every item-catalog category scenario; a component test for the delete-refused flow.",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
-      "created": "2026-10-04"
+      "created": "2026-10-04",
+      "completed_at": "2026-10-04",
+      "notes": "core/catalog/categories.ts: createCategory, renameCategory (case-only rename allowed; same name returns data unchanged), deleteCategory (refuses with count while items belong to it), moveItemsOutOfCategory (to no category), findCategory. Names are trimmed; empty and duplicate (nameKey) refused, naming the existing spelling. Refusal/refuse/isRefusal moved to core/refusal.ts (app/store re-exports), so domain functions return AppData | Refusal<E> and go straight into store.apply. UI: ui/sections/CategoriesPanel.tsx beside the item list in the Items section - create field, table with item counts and a (no category) row, inline rename (Enter saves, Escape cancels), delete; refusals shown in the row with the typed text kept; an in-use refusal offers 'Move them to no category', after which Delete works (two steps, Claude's reading of the spec's 'moving those items out first'). Claude's call: deleting an empty category is not confirmed, since nothing is lost. 14 domain + 6 component tests; 220 Vitest total, lint clean."
     },
     {
       "id": 15,
       "title": "Items section",
       "description": "Item list with category, filter by category, and search by part of the name. Rename, which cascades through recipes, hangar and plans (targets, variant choices, reserved piles, step snapshots) in one commit, and rejects a name already in use. Change an item's category. Delete, refused while a recipe references the item (naming the recipes) or while it holds stock (stating the quantity).\n\nTesting: automated - domain tests for every item-catalog item scenario, including a rename asserting every file's content afterwards. Manual (user) - a quick pass over the list and its filters.",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
-      "created": "2026-10-04"
+      "created": "2026-10-04",
+      "notes": "Built 2026-10-04, awaiting the user's quick manual pass. core/catalog/items.ts: listItems, findItem, recipesUsing, heldQuantity (general stock + every plan's reserved pile), renameItem (cascades through items, recipe products/inputs, hangar, plan targets, variantChoices keys, reserved piles, step product/inputsPerRun/deducted/short; case-only rename allowed; a stale name already present in a plan's history map is merged - quantities summed, the renamed item's variant choice wins), setItemCategory, deleteItem (refused while recipes use it as product or input, naming them; or while it holds general or reserved stock, stating the total; plans' history does not block it). Tests: rename of five fixture items asserting every file equals the old text with only the name replaced, plus the UI rename checking items/recipes/plans files. UI: Items list beside Categories with search, category filter (All / (no category) / each), inline rename, per-row category select (immediate), delete; refusals in the row. Bug caught by the component test: a change callback must not read e.target.value lazily - it runs later in the write queue, after React has reset the controlled select. 245 Vitest, lint clean. Manual pass deferred by the user until items can be created (task 18); task stays open until then. Manual pass done by the user 2026-10-05: list, filters, rename, category change and delete all work.",
+      "completed_at": "2026-10-05"
     },
     {
       "id": 16,
       "title": "Recipe validation rules",
       "description": "Domain-core validation for saving a recipe: at least one input; positive whole quantities; no self-consumption; duplicate inputs detected so they can be offered for combining; one recipe per product except T2 Manufacturing; distinct non-empty variant labels when there are several; one recipe type per product; cycle detection that returns the chain (A to B to C to A).\n\nTesting: automated - one test per recipe-library validation scenario, plus cycle cases of length 2, 3 and through a T2 variant.",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
-      "created": "2026-10-04"
+      "created": "2026-10-04",
+      "completed_at": "2026-10-04",
+      "notes": "core/recipes/saveRecipe.ts: saveRecipe(data, draft, {original?, existingLabel?}) -> AppData | Refusal<RecipeProblem[]>, every problem tied to a form field (product/type/variant/existingLabel/output/inputs/{rows}). Rules: product and inputs must be catalog items; output and quantities whole >= 1; at least one input; duplicate rows reported together with their combined total (combineDuplicateInputs merges into the first row); no self-consumption; mixed types (names existing recipe + type); only T2 may have several (names existing); T2 siblings need distinct labels ignoring case; existing unlabelled T2 sibling -> existingNeedsLabel, then saved together with existingLabel; changing the product of a recipe an incomplete plan targets is refused (targetedByPlans) when no other recipe for the old product remains; cycles via validate.findCycles over the library after the save, rotated to start at the input that closes the loop (A -> B -> C -> A for C made from A) and reported on that row; cycle check only runs once the record is otherwise sound. Label changes (edit, or labelling the existing recipe) move plan targets and variantChoices along. NOT done here, left to task 30: explicit variantChoices for plans that implicitly used a previously sole unlabelled recipe as an intermediate (needs the calculation engine). Tests assert every successful save reloads via loadData. 34 tests; 279 Vitest total, lint clean."
     },
     {
       "id": 17,
       "title": "Item autocomplete with inline create",
       "description": "A reusable item-name field: suggestions matching part of the name while typing, each shown with its category; choosing one binds the field to that item; when nothing matches, offer to create the item with an optional category, without leaving the form. Keyboard-driven (arrows, Enter, Escape).\n\nTesting: automated - component tests for matching, binding, inline creation and keyboard handling. Manual (user) - how fast and comfortable it is to type with, since that is where most typing happens.",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
-      "created": "2026-10-04"
+      "created": "2026-10-04",
+      "notes": "Manual check by the user 2026-10-05: autocomplete and inline item creation work. core/catalog/items.ts gained createItem (trimmed, unique ignoring case, optional existing category) and suggestItems (contains, ignoring case; exact match first, then prefix, then the rest, alphabetical; limit 12). ui/ItemField.tsx: ARIA combobox; value {text, item?}; binding follows the text - typing an existing name exactly in any case binds, changing it unbinds; suggestions with category; last option 'Create item X…' when no exact match, opening an inline panel (category select focused, Enter creates, Escape cancels) that creates via the store and binds; ArrowUp/Down wrap, Enter chooses without submitting the surrounding form, Escape closes the list; bound field shows green, invalid red. 10 component tests.",
+      "completed_at": "2026-10-05"
     },
     {
       "id": 18,
       "title": "Recipe form",
-      "description": "Create and edit recipes: product, type, variant label, output quantity, notes and input rows, all using the item autocomplete. Saving is unavailable while any field is unbound, with the unresolved rows marked. Duplicate input rows can be combined. Adding a second T2 variant when the first has no label asks for both labels in place and saves both together. Validation messages are shown at the offending field.\n\nTesting: automated - component tests for unresolved rows blocking save, combining duplicates, the second-variant labelling flow, and messages appearing at the right field. Manual (user) - entering a few real recipes end to end.",
-      "status": "todo",
+      "description": "Create and edit recipes: product, type, variant label, output quantity, notes and input rows, all using the item autocomplete. Saving is unavailable while any field is unbound, with the unresolved rows marked. Duplicate input rows can be combined. Adding a second T2 variant when the first has no label asks for both labels in place and saves both together. Validation messages are shown at the offending field.\n\nTesting: automated - component tests for unresolved rows blocking save, combining duplicates, the second-variant labelling flow, and messages appearing at the right field. Manual (user) - entering a few real recipes end to end. REMINDER: once this works, do the deferred manual pass of task 15 (Items list, filters, rename, category change, delete) with the items entered here, then close task 15.",
+      "status": "done",
       "priority": "high",
-      "created": "2026-10-04"
+      "created": "2026-10-04",
+      "notes": "Manual check by the user 2026-10-05: entered two recipes with new items; save stayed disabled until every name was an item. The deferred task 15 pass is still open (see task 15). ui/sections/RecipeForm.tsx: product (ItemField), type, variant label, output per run (accepts 10,000), inputs table with an always-present trailing empty row, Remove per row, notes; Save, 'Save and enter another' (new recipes only), Cancel. Save disabled while product or any used row is unbound; unresolved fields marked with a hint. Problems from saveRecipe shown at their field/row; duplicate rows offer 'Combine into one row (n)'; existingNeedsLabel reveals 'Label for the existing recipe' in place, then both save together. Choosing a product that already has recipes pre-selects their type (new recipes only). Navigation: Shell owns the Recipes view (list | form{original,id}); goTo accepts {section:'recipes', open:'new'|RecipeRef}; the Plans 'Create the first recipe' button opens the form; list rows open a recipe for editing. Form state survives switching sections. Not yet: confirmation when an edited recipe is used by plans (task 30), delete (task 19), list filters (task 19). 12 component tests; 308 Vitest + 16 cargo, lint + clippy clean. UNEXPLAINED INCIDENT (2026-10-05, once, not reproducible): while starting a second recipe after saving one, the window went entirely white, possibly after pressing T; nothing in the terminal running npm run dev. Restart fixed it. A white window means React unmounted after an uncaught render error, whose message goes to the webview devtools console, not the terminal. Suspect: Vite hot reload while Claude was reformatting many UI files with the app running (the user noticed a rebuild just before). If it recurs: open devtools (right-click > Inspect in the dev build) and read the console, and consider adding an error boundary that shows the error instead of a white window.",
+      "completed_at": "2026-10-05"
     },
     {
       "id": 19,
       "title": "Recipes section list",
       "description": "List recipes with product, variant label, type and output per run; filter by type and by product category; search by part of the product name. Open a recipe in the form. Delete a recipe no plan uses (deleting one that plans use is task 30).\n\nTesting: automated - domain tests for the filters and search; a component test for delete with confirmation. Manual (user) - a quick look at the list.",
-      "status": "todo",
+      "status": "in_progress",
       "priority": "high",
-      "created": "2026-10-04"
+      "created": "2026-10-04",
+      "notes": "Built 2026-10-05, awaiting the user's quick look. core/recipes/library.ts: filterRecipes (type, product category or null for none, search on part of the product name ignoring case; sorted by product then variant), deleteRecipeEffect (the product's remaining recipes; none = becomes a base material), deleteRecipe (refused while an incomplete plan targets it, naming the plans). Recipes section: New recipe, search, type and category filters (a category deleted while selected falls back to All), table Product (opens the form) / Variant / Type / Output per run / Inputs / Delete. Delete asks for confirmation naming the recipe and stating whether the product becomes a base material or which variants remain; refusals shown in the row. Deleting a recipe plans only use as an intermediate (naming them, releasing reservations) is task 30 - needs the calculation engine. RecipeTable.onOpen is kept for the Plans landing page (task 24). 10 domain + 5 component tests; 323 Vitest, lint + clippy clean."
     },
     {
       "id": 20,
       "title": "Calculation engine",
       "description": "The material-calculation spec as pure domain code. Inputs: recipes, a target recipe and run count, available material, variant choices, and the plan's started and done steps. Covers recursive expansion to base materials with consolidated totals; whole runs; leftover shared within one calculation; netting against available material at every tier, never against the target product; started steps' output counted as already on its way; dependency build order with a stable order within a tier; and a 'variant choice needed' result instead of a guess or a failure. Output: Acquire entries, Build entries and base material totals, including fully covered materials.\n\nTesting: automated - every material-calculation scenario as a test, the 'reserving across tiers' X/y/z example from production-plans, deep multi-tier fixtures modelled on real T2/PI/reaction chains, and stability of the build order across repeated runs.",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
-      "created": "2026-10-04"
+      "created": "2026-10-04",
+      "completed_at": "2026-10-05",
+      "notes": "core/calculation/calculate.ts: calculate({recipes, target, runs, available, variantChoices, steps}) -> {acquire, builds, baseMaterials, fromAvailable, choicesNeeded} or {ok:false, reason:'targetMissing'}. Items are processed consumers-first (reverse DFS post-order over the chosen recipes), so each item's total demand is known before its runs are computed: shared batches, leftover < one run's output, and netting at every tier fall out. Per item: available covers first (recorded in fromAvailable - exactly what a reservation moves, intermediates included), then output of started steps on its way, then whole runs. The target is never netted; only runs of started/done target steps reduce it. Done intermediate steps count only via the stock they produced. Started steps appear as entries with their recorded figures; their surplus is leftover on the last one started for that product; a started step the tree no longer needs sits just before the target. Variants: choice used if valid; sole recipe used without asking; otherwise (several, or an invalid remembered choice) a ChoiceNeeded entry with labels, invalidChoice and stillNeeded, and nothing below it is expanded - the rest still calculates. Build order: by tier (0 = base, else 1 + highest input tier; target last), then name, then started before new - stable regardless of recipe/input order. 26 tests incl. every material-calculation scenario, the X/y/z reservation example, a deep T2/PI/reaction fixture (made-up quantities), order stability; mutation-checked (4 mutations, all caught). 349 Vitest, lint clean. Trace/explanation is task 21."
     },
     {
       "id": 21,
       "title": "Calculation explanation",
       "description": "Extend the engine so every step and material carries its trace: the total demand, which parts of the tree it came from, how much was covered by available material, the run count it rounds up to, and the leftover. This feeds the 'why is this number what it is' view in the plan.\n\nTesting: automated - the trace for the 'tracing a quantity' scenario and for a shared-batch case adds up exactly to the reported figures.",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
-      "created": "2026-10-04"
+      "created": "2026-10-04",
+      "completed_at": "2026-10-05",
+      "notes": "calculate() result gained trace: Map<item, ItemTrace> for every item reached with demand, target included. ItemTrace: how (build/acquire/choice/target), demandFrom (each consuming product and its quantity, sorted by name - the immediate parents; the user drills up through them), totalDemand, fromAvailable, onItsWay (started steps), remaining, and for builds/target outputPerRun, runs, produced, leftover. Invariants tested on a deep tree with stock: fromAvailable + onItsWay + remaining = totalDemand; demandFrom sums to totalDemand; produced = runs x outputPerRun = remaining + leftover; matches the build entry. Also: a base material with output on its way (only possible for a started step whose recipe was deleted) now reports toAcquire = remaining. The UI for it is part of task 25. 30 engine tests."
     },
     {
       "id": 22,
       "title": "Hangar paste reader",
       "description": "Parse pasted inventory/assets text: the first token made only of digits, dots and commas is the quantity, the text before it is the name, the rest is ignored. Keep only items some recipe references, as input or product. Produce the summary of what was added (with quantities), ignored (not used by any recipe) and skipped (no quantity). Pasting adds to existing stock.\n\nTesting: automated - every hangar paste scenario, including tab-separated inventory lines, assets lines with trailing columns, names containing digits (F77 Compact Co-Processor), thousands separators, and pasting twice. Manual (user) - paste real text copied from the game's inventory and assets windows, since its exact format can only be checked against the game.",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
-      "created": "2026-10-04"
+      "created": "2026-10-04",
+      "notes": "Manual check by the user 2026-10-05: real text copied from the in-game hangar (inventory) window pasted correctly, and a typed line works. Real assets-window text with industry items also pasted correctly. core/hangar/paste.ts: readPasteLines (tokens split on tab and plain space only; quantity = first token matching digits plus . , no-break space U+00A0 and narrow no-break space U+202F - the last two are Claude's addition beyond the spec, for game locales using them as thousands separators; name = text before it, trimmed; blank lines ignored; no quantity, empty name or 0 -> skipped) and pasteStock (names matched ignoring case, stored as the catalog spells them; kept only if some recipe uses the item as input or product; otherwise ignored with reason notAnItem / notUsedByRecipe; lines naming the same item summed; adds to general stock, never replaces). 18 tests incl. inventory and assets formats, F77 Compact Co-Processor, punctuation-led names, separators, pasting twice.",
+      "completed_at": "2026-10-05"
     },
     {
       "id": 23,
       "title": "Hangar section",
       "description": "Table of held items with available / reserved / total and the plans holding the reserved part; search and category filter. Correct an available quantity by hand; remove an item's stock. Reserved quantities are not editable, with an explanation naming the plan and an offer to release it. Items no recipe references any more are flagged. The paste dialog and its summary.\n\nTesting: automated - domain tests for corrections and removal, and for the available/reserved/total figures with reservations from several plans. Manual (user) - the paste-and-summary flow with real game text.",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
-      "created": "2026-10-04"
+      "created": "2026-10-04",
+      "notes": "Manual check by the user 2026-10-05: real text copied from the in-game hangar (inventory) window pasted correctly, and a typed line works. Real assets-window text with industry items also pasted correctly. core/hangar/stock.ts: hangarRows (available, reserved, total, reservedBy with plan name + index, category, usedByRecipes), setAvailable (whole >= 0; 0 removes; reserved untouched), removeStock. core/plans/reservations.ts: releaseReservation(data, {index, name}) - pile back to general stock (task 27 builds on it). Plans are addressed by list position guarded by name (PlanAt), because plan names are not required to be unique - OPEN QUESTION for task 24: should plan names be unique? Hangar section: Paste stock panel (textarea, Add to hangar, Escape cancels) then a dismissable summary (added with +quantities, ignored with reason, skipped lines verbatim); search; category filter; table Item (with a 'not used by any recipe' tag) / Category / Available / Reserved (click shows the explanation naming each plan with a Release button) / Total / Correct (inline, accepts 4,750) / Remove (confirmation; reserved stays with its plans). Reset is task 29. 30 domain + 8 component tests; 391 Vitest + 16 cargo, lint + clippy clean. User feedback 2026-10-05: the ignored reason for items not in the catalog reads 'not relevant for industry' (was 'not one of your items' - they are items the user owns, just not used by any recipe). Typed line 'Tritanium 500' confirmed working.",
+      "completed_at": "2026-10-05"
     },
     {
       "id": 24,
@@ -290,7 +311,6 @@
     }
   ],
   "next_session_suggestions": [
-    "Task 13: application shell - one window with the Plans / Recipes / Hangar / Items sidebar, the three start-up landing pages, the data-folder panel (path, open button, 'edit only while closed' note), confirmation dialogs, and the action pattern (compute in memory -> one atomic commit through oneAtATime -> then update the screen; a commit that fails leaves state unchanged, CommitError.committed tells whether it took effect). It replaces the placeholder ui/App.tsx and must also bring manifest writtenBy up to date on the first commit by a newer build (upgrades.md).",
-    "After task 13, continue in order with tasks 14-19 (categories, items, recipe validation, autocomplete, recipe form, recipe list)."
+    "Work out where the next point for manual testing by the user is (likely after task 25, when a plan and its checklist can be seen), then work through the tasks in order up to that point. Task 19 is still open pending the user's quick look at the recipe list filters and delete."
   ]
 }

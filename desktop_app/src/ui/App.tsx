@@ -1,34 +1,26 @@
 import { useState } from "react";
 import type { ConversionReport } from "../app/startup";
-import { APP_NAME, APP_VERSION } from "../appInfo";
-import type { AppData } from "../core/data/model";
+import type { DataStore } from "../app/store";
 import type { DataFolder } from "../storage/fileSystem";
+import { ConfirmProvider } from "./ConfirmDialog";
+import { StoreContext } from "./context";
+import { Shell } from "./Shell";
 
 interface AppProps {
   folder: DataFolder;
-  data: AppData;
+  store: DataStore;
   /** Present on the one start that converted the data. */
   conversion?: ConversionReport;
 }
 
-/** Placeholder until the application shell (task 13): shows that the data loaded. */
-export function App({ folder, data, conversion }: AppProps) {
+/** The running application, once the data is loaded. */
+export function App({ folder, store, conversion }: AppProps) {
   return (
-    <main>
-      <h1>{APP_NAME}</h1>
-      <p>Version {APP_VERSION}</p>
-      {conversion && <ConversionNotice report={conversion} folder={folder} />}
-      <p className="data-folder-path">
-        Data folder: <code>{folder.path}</code>{" "}
-        <button type="button" onClick={() => void folder.open()}>
-          Open
-        </button>
-      </p>
-      <p>
-        {data.items.uncategorised.length + [...data.items.categories.values()].reduce((n, items) => n + items.length, 0)} items,{" "}
-        {data.recipes.length} recipes, {data.hangar.stock.size} items in stock, {data.plans.length} plans.
-      </p>
-    </main>
+    <StoreContext.Provider value={store}>
+      <ConfirmProvider>
+        <Shell folder={folder} banner={conversion && <ConversionNotice report={conversion} folder={folder} />} />
+      </ConfirmProvider>
+    </StoreContext.Provider>
   );
 }
 
@@ -40,8 +32,8 @@ function ConversionNotice({ report, folder }: { report: ConversionReport; folder
   return (
     <section className="notice" role="status">
       <p>
-        Your data was converted from format {report.from} (last written by {report.writtenBy}) to format {report.to} so this version can
-        use it. A copy of the files as they were is in <code>{report.backupFolder.replaceAll("/", "\\")}</code>.
+        Your data was converted from format {report.from} (last written by {report.writtenBy}) to format {report.to} so this version can use
+        it. A copy of the files as they were is in <code>{report.backupFolder.replaceAll("/", "\\")}</code>.
       </p>
       <ul>
         {report.steps.map((step, i) => (

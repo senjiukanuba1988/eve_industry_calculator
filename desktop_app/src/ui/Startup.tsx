@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createQueue, type Queue } from "../app/oneAtATime";
 import type { StartupResult } from "../app/startup";
+import { DataStore } from "../app/store";
 import { APP_NAME, APP_VERSION } from "../appInfo";
 import { formatDataError } from "../core/data/dataError";
 import type { DataFolder } from "../storage/fileSystem";
@@ -9,10 +11,12 @@ interface StartupProps {
   folder: DataFolder;
   /** Runs the start-up sequence; called again by "Try again". */
   start: () => Promise<StartupResult>;
+  /** The queue every write to the data folder goes through; start-up uses it too. */
+  queue?: Queue;
 }
 
 /** Runs the start-up sequence and shows either the application or why it cannot start. */
-export function Startup({ folder, start }: StartupProps) {
+export function Startup({ folder, start, queue }: StartupProps) {
   const [result, setResult] = useState<StartupResult | undefined>();
   const [attempt, setAttempt] = useState(0);
 
@@ -29,11 +33,17 @@ export function Startup({ folder, start }: StartupProps) {
     setAttempt((a) => a + 1);
   }, []);
 
+  const [fallbackQueue] = useState(createQueue);
+  const store = useMemo(
+    () => result?.kind === "ready" && new DataStore(folder.fs, result.data, { appVersion: APP_VERSION, queue: queue ?? fallbackQueue }),
+    [result, folder, queue, fallbackQueue],
+  );
+
   if (!result) {
     return <p className="startup-loading">Opening your data…</p>;
   }
-  if (result.kind === "ready") {
-    return <App folder={folder} data={result.data} conversion={result.conversion} />;
+  if (result.kind === "ready" && store) {
+    return <App folder={folder} store={store} conversion={result.conversion} />;
   }
 
   const openFolder = () => void folder.open();
@@ -47,8 +57,8 @@ export function Startup({ folder, start }: StartupProps) {
       return (
         <StartupError title="Your data could not be read" folder={folder} onOpenFolder={openFolder} retry={retry}>
           <p>
-            Something in the data files is not as {APP_NAME} expects it, so it has not started. Nothing has been changed. Correct the
-            file, then try again.
+            Something in the data files is not as {APP_NAME} expects it, so it has not started. Nothing has been changed. Correct the file,
+            then try again.
           </p>
           <ul className="startup-errors">
             {result.errors.map((error, i) => (

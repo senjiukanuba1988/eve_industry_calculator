@@ -24,16 +24,19 @@ function renderWith(...results: StartupResult[]) {
 describe("Startup", () => {
   it("shows the application once the data is ready", async () => {
     renderWith({ kind: "ready", data: emptyData("1.0.0") });
-    expect(await screen.findByRole("heading", { name: "EVE Industry Calculator" })).toBeInTheDocument();
-    expect(screen.getByText(/0 items, 0 recipes/)).toBeInTheDocument();
+    expect(await screen.findByRole("navigation", { name: "Sections" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Plans" })).toBeInTheDocument();
   });
 
   it("shows malformed data with file and line, and nothing else", async () => {
-    renderWith({ kind: "malformed", errors: [{ file: "recipes.json", line: 214, message: 'input "Sulfuric Acd" is not an item in items.json' }] });
+    renderWith({
+      kind: "malformed",
+      errors: [{ file: "recipes.json", line: 214, message: 'input "Sulfuric Acd" is not an item in items.json' }],
+    });
     expect(await screen.findByRole("heading", { name: "Your data could not be read" })).toBeInTheDocument();
     expect(screen.getByText('recipes.json line 214: input "Sulfuric Acd" is not an item in items.json')).toBeInTheDocument();
     expect(screen.getByText(/Nothing has been changed/)).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "EVE Industry Calculator" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Sections" })).not.toBeInTheDocument();
   });
 
   it("offers to open the data folder, showing its full path", async () => {
@@ -49,7 +52,7 @@ describe("Startup", () => {
       { kind: "ready", data: emptyData("1.0.0") },
     );
     await userEvent.click(await screen.findByRole("button", { name: "Try again" }));
-    expect(await screen.findByRole("heading", { name: "EVE Industry Calculator" })).toBeInTheDocument();
+    expect(await screen.findByRole("navigation", { name: "Sections" })).toBeInTheDocument();
     expect(start).toHaveBeenCalledTimes(2);
   });
 
@@ -65,7 +68,13 @@ describe("Startup", () => {
   });
 
   it("explains a failed conversion, its step, and that the files are unchanged", async () => {
-    renderWith({ kind: "conversionFailed", from: 1, to: 3, step: "Recipes gain a facility field", errors: ["plans.json → plans[2].runs: expected a whole number"] });
+    renderWith({
+      kind: "conversionFailed",
+      from: 1,
+      to: 3,
+      step: "Recipes gain a facility field",
+      errors: ["plans.json → plans[2].runs: expected a whole number"],
+    });
     expect(await screen.findByRole("heading", { name: "Your data could not be converted from format 1 to format 3" })).toBeInTheDocument();
     expect(screen.getByText("The step that failed: Recipes gain a facility field.")).toBeInTheDocument();
     expect(screen.getByText("plans.json → plans[2].runs: expected a whole number")).toBeInTheDocument();
