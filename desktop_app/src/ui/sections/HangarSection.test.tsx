@@ -121,4 +121,24 @@ describe("HangarSection", () => {
     expect(cells("Sulfuric Acid")[0]).toBe("Sulfuric Acid");
     expect(screen.queryByRole("cell", { name: "Tritanium" })).not.toBeInTheDocument();
   });
+
+  it("resets the hangar after a confirmation stating exactly what is lost", async () => {
+    const { store } = renderHangar();
+    await showHangar();
+    await userEvent.click(screen.getByRole("button", { name: "Reset hangar" }));
+    const dialog = screen.getByRole("alertdialog", { name: "Reset the hangar?" });
+    expect(dialog).toHaveTextContent("All stock is cleared: 4 items.");
+    expect(dialog).toHaveTextContent("reserved materials are cleared with the rest: 80 Flycatchers.");
+    expect(dialog).toHaveTextContent("80 Flycatchers (1 started, 1 done)");
+    expect(dialog).toHaveTextContent("Completed plans are not touched.");
+
+    await userEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    expect(store.current.hangar.stock.size).toBe(4);
+
+    await userEvent.click(screen.getByRole("button", { name: "Reset hangar" }));
+    await userEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Reset hangar" }));
+    await vi.waitFor(() => expect(store.current.hangar.stock.size).toBe(0));
+    expect(store.current.plans[0]).toMatchObject({ reserved: undefined, steps: [] });
+    expect(store.current.plans[1]!.completed).toBeDefined();
+  });
 });

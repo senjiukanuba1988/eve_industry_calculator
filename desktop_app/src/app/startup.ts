@@ -8,6 +8,7 @@ import { parseJson } from "../core/data/jsonParse";
 import { loadData, type DataFileTexts } from "../core/data/load";
 import { DATA_FILES, type AppData } from "../core/data/model";
 import { serializeFile, serializeManifest } from "../core/data/serialize";
+import { removeExpiredPlans } from "../core/plans/retention";
 import { commit, COMMIT_MARKER, recover } from "../storage/commit";
 import type { FileSystem } from "../storage/fileSystem";
 
@@ -31,7 +32,7 @@ export type StartupResult =
 
 export interface StartupOptions {
   appVersion: string;
-  /** For naming backups. */
+  /** For naming backups and for removing completed plans after seven days. */
   now: () => Date;
   /** Overridable for tests; the real build uses CURRENT_FORMAT and CONVERSION_STEPS. */
   currentFormat?: number;
@@ -42,7 +43,8 @@ export const BACKUPS_FOLDER = "backups";
 
 export async function startUp(fs: FileSystem, options: StartupOptions): Promise<StartupResult> {
   try {
-    return await run(fs, options);
+    const result = await run(fs, options);
+    return result.kind === "ready" ? await removeExpired(fs, options, result) : result;
   } catch (error) {
     return { kind: "failed", message: error instanceof Error ? error.message : String(error) };
   }
@@ -76,6 +78,22 @@ async function run(fs: FileSystem, options: StartupOptions): Promise<StartupResu
     return loaded.ok ? { kind: "ready", data: loaded.data } : { kind: "malformed", errors: loaded.errors };
   }
   return convert(fs, options, version.formatVersion, version.writtenBy ?? "an unknown version", currentFormat);
+}
+
+/** Step 5: plans completed more than seven days ago are removed, as one ordinary commit, before anything is shown. */
+async function removeExpired(fs: FileSystem, options: StartupOptions, ready: StartupResult & { kind: "ready" }): Promise<StartupResult> {
+  const kept = removeExpiredPlans(ready.data, options.now());
+  if (kept === ready.data) {
+    return ready;
+  }
+  const data: AppData = { ...kept, manifest: { ...kept.manifest, writtenBy: options.appVersion } };
+  await commit(fs, {
+    replace: new Map([
+      ["plans.json", serializeFile("plans.json", data)],
+      ["manifest.json", serializeFile("manifest.json", data)],
+    ]),
+  });
+  return { ...ready, data };
 }
 
 async function createFolder(fs: FileSystem, appVersion: string): Promise<StartupResult> {

@@ -28,14 +28,14 @@ The target recipe and the number of runs are entered when the plan is created, a
 #### Scenario: Naming a plan
 
 - **WHEN** the user creates a plan
-- **THEN** a name is suggested from the target and run count, for example "80 Flycatchers"
+- **THEN** a name is suggested from the target and run count, for example "80 Flycatcher" (the quantity the plan makes, then the product)
 - **AND** the user can rename it at any time without affecting anything else
 
 ### Requirement: A plan is a checklist of two kinds of entry
 
 The plan view SHALL present an ordered checklist containing:
 
-- **Acquire** entries — a base material the plan still needs and does not have, with the quantity short. These SHALL NOT be tickable by hand; they SHALL disappear on their own once the material becomes available.
+- **Acquire** entries — a base material the plan still needs and does not have, with the quantity short. These SHALL NOT be tickable by hand; they SHALL disappear on their own once the material becomes available. Base materials that available material fully covers SHALL be listed in a separate, collapsed section of covered materials, so they can be seen to be accounted for (see [Material Calculation](../material-calculation/spec.md), "Fully covered item").
 - **Build** entries — run a named recipe a given number of times to produce a given quantity of an item. Each SHALL show the recipe, the number of runs, the resulting output quantity, and any leftover. These SHALL be moved by hand through **not started**, **started**, and **done**.
 
 Acquire entries SHALL be listed together, before all build entries. Build entries SHALL appear in dependency order, with the step producing the target product last. Build entries marked done SHALL move out of the checklist into a separate, collapsed section of completed steps, which the user can expand to see them.

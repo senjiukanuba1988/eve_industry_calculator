@@ -1,4 +1,14 @@
-import { isTimestamp } from "./timestamp";
+import { isTimestamp, toTimestamp } from "./timestamp";
+
+describe("toTimestamp", () => {
+  it("writes the local time with the local offset, to the second", () => {
+    const date = new Date(2026, 9, 6, 9, 5, 7);
+    const text = toTimestamp(date);
+    expect(isTimestamp(text)).toBe(true);
+    expect(text.slice(0, 19)).toBe("2026-10-06T09:05:07");
+    expect(new Date(text).getTime()).toBe(date.getTime());
+  });
+});
 
 describe("isTimestamp", () => {
   it.each(["2026-10-04T16:32:05+02:00", "2026-01-31T00:00:00-05:30", "2028-02-29T23:59:59+00:00", "2026-12-31T12:00:00+14:00"])(

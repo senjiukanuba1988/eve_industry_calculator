@@ -15,7 +15,8 @@
     "openspec/specs/production-plans/spec.md",
     "openspec/specs/data-storage/spec.md",
     "design/data-files.md",
-    "design/upgrades.md"
+    "design/upgrades.md",
+    "acceptance.md"
   ],
   "key_decisions": [
     {
@@ -93,6 +94,14 @@
     {
       "decision": "Code architecture of desktop_app/ (2026-10-04, tasks 9-12): src/core (pure domain logic, no UI, I/O or platform APIs), src/storage (FileSystem interface, Tauri / in-memory / browser adapters, atomic commit protocol), src/app (orchestration such as start-up, the only layer that combines core and storage), src/ui (React); ESLint forbids core from importing ui, storage, React or Tauri, and storage from importing ui. The Rust layer takes only paths relative to the data folder and refuses '..', absolute paths and empty segments. Everything that writes to the data folder runs one call at a time (app/oneAtATime.ts). The format-change guard snapshots the decoder's field lists (FIELDS/ENUMS in core/data/decode.ts) per format in core/data/fixtures/format-N.schema.json.",
       "rationale": "Keeps the domain logic testable without a window or a disk, as the stack decision intended. Path restriction means the webview cannot reach any other file on the machine. Serialised writes because two commits in flight would share temp files (React StrictMode already runs start-up twice in development). The field lists are a complete description of the format precisely because unknown keys are rejected, which makes them a reliable thing to snapshot."
+    },
+    {
+      "decision": "A recipe change (edit, delete, or a new recipe) counts as affecting an open plan only when that plan's outstanding work changes - what is left to acquire, the build steps with their runs and inputs, the variant choices it waits for, or what it draws from available material - not merely because the recipe appears somewhere in its tree (2026-10-12, task 30). Only affected plans are named in the confirmation, and only affected reserved plans are released. Editing notes or a label, or the recipe of an intermediate the hangar already covers, asks nothing. A new recipe asks only when it would release a reservation, so creating a missing recipe from a plan does not prompt.",
+      "rationale": "User's choice over the simpler \"any recipe in the tree\" rule. It matches the production-plans rationale (\"anything that changes what a reserved plan needs\" releases it): reservations are not released, and no confirmation is asked, when nothing about the plan would change."
+    },
+    {
+      "decision": "Base materials that available material fully covers are listed in a collapsed \"Covered materials\" section below a plan's checklist (2026-10-12, task 33). Acquire entries still disappear from the checklist once covered. production-plans spec updated accordingly.",
+      "rationale": "The acceptance pass found the two specs contradicting each other: material-calculation says a fully covered item is still shown so it can be seen to be accounted for, while production-plans says Acquire entries disappear once the material is available. User chose the collapsed section, which satisfies both and keeps the checklist short."
     }
   ]
 }

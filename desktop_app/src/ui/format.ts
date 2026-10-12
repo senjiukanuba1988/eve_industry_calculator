@@ -14,3 +14,9 @@ export function recipeName(ref: RecipeRef): string {
 export function formatQuantity(n: number): string {
   return n.toLocaleString("en");
 }
+
+/** "10,000" or "10000" as 10000; anything else as NaN, which the action refuses or the form reports at the field. */
+export function parseWhole(text: string): number {
+  const compact = text.replace(/[\s,]/g, "");
+  return /^\d+$/.test(compact) ? Number(compact) : Number.NaN;
+}

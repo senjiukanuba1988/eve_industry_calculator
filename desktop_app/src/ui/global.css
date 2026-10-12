@@ -448,3 +448,76 @@ tr.detail-row ul {
   margin: 2px 0;
   padding-left: 18px;
 }
+
+/* --- Plans ------------------------------------------------------------- */
+
+.segmented {
+  display: inline-flex;
+}
+
+.segmented button[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.plan-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.plan-title h1 {
+  margin: 0;
+}
+
+.plan-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  color: var(--muted);
+}
+
+table.checklist td.kind {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+table.checklist td.kind.acquire {
+  color: var(--danger);
+}
+
+table.checklist td.kind.target {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.status.started {
+  color: var(--accent);
+}
+
+.variant-prompt {
+  border-color: var(--accent);
+}
+
+.variant-choices,
+.done-steps {
+  margin-top: 12px;
+}
+
+.done-steps summary {
+  cursor: pointer;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+table.step-inputs {
+  width: auto;
+  margin: 2px 0 6px;
+  background: #fff;
+}
+
+button.step-action {
+  padding: 0 8px;
+}

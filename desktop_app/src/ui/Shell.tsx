@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { APP_VERSION } from "../appInfo";
 import type { DataFolder } from "../storage/fileSystem";
-import { NavigationContext, nextFormId, useAppData, type Destination, type RecipesView, type Section } from "./context";
+import { NavigationContext, nextFormId, useAppData, type Destination, type HangarFocus, type PlansView, type RecipesView, type Section } from "./context";
 import { DataFolderSection } from "./sections/DataFolderSection";
 import { HangarSection } from "./sections/HangarSection";
 import { ItemsSection } from "./sections/ItemsSection";
@@ -23,6 +23,8 @@ export function Shell({ folder, banner }: ShellProps) {
   const [section, setSection] = useState<Section>("plans");
   // Kept here rather than in the section, so that other sections can open a recipe.
   const [recipesView, setRecipesView] = useState<RecipesView>({ kind: "list" });
+  const [plansView, setPlansView] = useState<PlansView>({ kind: "list" });
+  const [hangarFocus, setHangarFocus] = useState<HangarFocus>();
 
   const goTo = (to: Destination) => {
     if (typeof to === "string") {
@@ -30,7 +32,14 @@ export function Shell({ folder, banner }: ShellProps) {
       return;
     }
     setSection(to.section);
-    setRecipesView({ kind: "form", original: to.open === "new" ? undefined : to.open, id: nextFormId() });
+    if (to.section === "plans") {
+      setPlansView(to.view);
+    } else if (to.section === "hangar") {
+      setHangarFocus({ item: to.item, id: nextFormId() });
+    } else {
+      const original = to.open === "new" ? undefined : to.open;
+      setRecipesView({ kind: "form", original, product: original ? undefined : to.product, fromPlan: to.fromPlan, id: nextFormId() });
+    }
   };
   const data = useAppData();
 
@@ -69,9 +78,9 @@ export function Shell({ folder, banner }: ShellProps) {
         </nav>
         <main className="main">
           {banner}
-          {panel("plans", <PlansSection />)}
+          {panel("plans", <PlansSection view={plansView} onViewChange={setPlansView} />)}
           {panel("recipes", <RecipesSection view={recipesView} onViewChange={setRecipesView} />)}
-          {panel("hangar", <HangarSection />)}
+          {panel("hangar", <HangarSection focus={hangarFocus} />)}
           {panel("items", <ItemsSection />)}
           {panel("dataFolder", <DataFolderSection folder={folder} />)}
         </main>

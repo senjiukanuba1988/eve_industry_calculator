@@ -5,6 +5,7 @@ import { listItems } from "../catalog/items";
 import type { AppData, Recipe, RecipeRef, RecipeType } from "../data/model";
 import { compareRecipes } from "../data/serialize";
 import { refuse, type Refusal } from "../refusal";
+import { releaseChanged } from "./planImpact";
 
 export interface RecipeFilter {
   type?: RecipeType;
@@ -44,7 +45,10 @@ export function deleteRecipeEffect(data: AppData, recipe: RecipeRef): DeleteReci
   };
 }
 
-/** Deletes a recipe, unless an incomplete plan builds it. */
+/**
+ * Deletes a recipe, unless an incomplete plan builds it. A remembered choice of it stays, so
+ * the plan asks again; plans whose work changes and that had reserved are released.
+ */
 export function deleteRecipe(data: AppData, recipe: RecipeRef): AppData | Refusal<DeleteRecipeRefusal> {
   const same = (r: RecipeRef) => r.product === recipe.product && r.variant === recipe.variant;
   if (!data.recipes.some(same)) {
@@ -54,5 +58,5 @@ export function deleteRecipe(data: AppData, recipe: RecipeRef): AppData | Refusa
   if (plans.length > 0) {
     return refuse({ kind: "targetedByPlans", plans });
   }
-  return { ...data, recipes: data.recipes.filter((r) => !same(r)) };
+  return releaseChanged(data, { ...data, recipes: data.recipes.filter((r) => !same(r)) });
 }

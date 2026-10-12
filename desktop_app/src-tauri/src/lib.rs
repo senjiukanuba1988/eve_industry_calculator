@@ -12,7 +12,10 @@ pub const MAIN_WINDOW: &str = "main";
 
 /// Name of the data folder inside Documents. Development builds use their own, so that
 /// unfinished code never touches real data.
-pub const DATA_FOLDER_NAME: &str = if cfg!(debug_assertions) { "EVE Industry Calculator (dev)" } else { "EVE Industry Calculator" };
+pub const DATA_FOLDER_NAME: &str = if cfg!(debug_assertions) { "EVE Industry Calculator (dev)" } else { RELEASE_DATA_FOLDER_NAME };
+
+/// The data folder of release builds, which the uninstaller names (windows/hooks.nsh).
+const RELEASE_DATA_FOLDER_NAME: &str = "EVE Industry Calculator";
 
 /// The data folder's absolute path, resolved once at start-up.
 struct DataFolder(PathBuf);
@@ -117,6 +120,13 @@ mod tests {
     fn main_window_label_matches_config() {
         let config: serde_json::Value = serde_json::from_str(include_str!("../tauri.conf.json")).unwrap();
         assert_eq!(config["app"]["windows"][0]["label"], MAIN_WINDOW);
+    }
+
+    #[test]
+    fn uninstaller_names_the_release_data_folder() {
+        let hooks = include_str!("../windows/hooks.nsh");
+        let expected = format!("\"$DOCUMENTS\\{RELEASE_DATA_FOLDER_NAME}\"");
+        assert!(hooks.contains(&expected), "hooks.nsh must name {expected}");
     }
 
     #[test]

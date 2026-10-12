@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from "react";
 import { compareNames } from "../../core/data/names";
+import { resetEffect, resetHangar } from "../../core/hangar/reset";
 import { pasteStock, type PasteSummary } from "../../core/hangar/paste";
 import { hangarRows, removeStock, setAvailable, type HangarRow, type StockRefusal } from "../../core/hangar/stock";
 import { releaseReservation, type ReservationRefusal } from "../../core/plans/reservations";
-import { useAction, useAppData, useConfirm } from "../context";
+import { useAction, useAppData, useConfirm, type HangarFocus } from "../context";
 import { Failure } from "../Failure";
 import { formatQuantity } from "../format";
 
@@ -11,10 +12,18 @@ import { formatQuantity } from "../format";
 const ANY = "";
 const NONE = " none";
 
-export function HangarSection() {
+/** With `focus`, shows just that item, with the plans holding it reserved, until the search is changed. */
+export function HangarSection({ focus }: { focus?: HangarFocus }) {
   const data = useAppData();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState(ANY);
+  const [focusShown, setFocusShown] = useState<number>();
+  if (focus && focus.id !== focusShown) {
+    setFocusShown(focus.id);
+    setSearch(focus.item);
+    setCategory(ANY);
+  }
+  const focused = focus && search === focus.item ? focus : undefined;
   const [pasting, setPasting] = useState(false);
   const [summary, setSummary] = useState<PasteSummary>();
 
@@ -23,7 +32,7 @@ export function HangarSection() {
   const needle = search.trim().toLowerCase();
   const all = hangarRows(data);
   const rows = all
-    .filter((r) => r.item.toLowerCase().includes(needle))
+    .filter((r) => (focused ? r.item === focused.item : r.item.toLowerCase().includes(needle)))
     .filter((r) => categoryFilter === ANY || (categoryFilter === NONE ? r.category === undefined : r.category === categoryFilter));
 
   return (
@@ -33,6 +42,7 @@ export function HangarSection() {
         <button type="button" onClick={() => setPasting(true)} disabled={pasting}>
           Paste stock
         </button>
+        <ResetButton />
         <input
           type="search"
           placeholder="Search items"
@@ -76,14 +86,21 @@ export function HangarSection() {
           </thead>
           <tbody>
             {rows.map((r) => (
-              <StockRow key={r.item} row={r} />
+              <StockRow
+                key={r.item === focused?.item ? `${r.item}
+${focused.id}` : r.item}
+                row={r}
+                expanded={r.item === focused?.item}
+              />
             ))}
           </tbody>
         </table>
       ) : (
         <p>
-          {all.length > 0
-            ? "No item matches."
+          {focused
+            ? `No ${focused.item} in the hangar, available or reserved.`
+            : all.length > 0
+              ? "No item matches."
             : 'The hangar is empty. Paste the contents of an inventory or assets window from the game to add stock - or type a line such as "Tritanium 500".'}
         </p>
       )}
@@ -198,11 +215,11 @@ function PasteSummaryPanel({ summary, onDismiss }: { summary: PasteSummary; onDi
   );
 }
 
-function StockRow({ row }: { row: HangarRow }) {
+function StockRow({ row, expanded = false }: { row: HangarRow; expanded?: boolean }) {
   const confirm = useConfirm();
   const action = useAction<StockRefusal | ReservationRefusal>();
   const [editing, setEditing] = useState<string>();
-  const [showReserved, setShowReserved] = useState(false);
+  const [showReserved, setShowReserved] = useState(expanded);
   const [refusal, setRefusal] = useState<StockRefusal | ReservationRefusal>();
   const { item } = row;
 
@@ -335,6 +352,44 @@ function StockRow({ row }: { row: HangarRow }) {
   );
 }
 
+/** Resetting the hangar to resync with the game: never refused, always confirmed with exactly what is lost. */
+function ResetButton() {
+  const data = useAppData();
+  const confirm = useConfirm();
+  const action = useAction();
+
+  const reset = async () => {
+    const effect = resetEffect(data);
+    const consequences: string[] = [
+      effect.stockItems > 0
+        ? `All stock is cleared: ${effect.stockItems} ${effect.stockItems === 1 ? "item" : "items"}.`
+        : "All stock is cleared (there is none at the moment).",
+    ];
+    if (effect.reservedPlans.length > 0) {
+      consequences.push(`Every reservation is released, and the reserved materials are cleared with the rest: ${effect.reservedPlans.join(", ")}.`);
+    }
+    if (effect.plansWithProgress.length > 0) {
+      const plans = effect.plansWithProgress.map((p) => `${p.plan} (${p.started} started, ${p.done} done)`).join(", ");
+      consequences.push(`Every step of every open plan goes back to not started, with its times: ${plans}.`);
+    }
+    consequences.push("Plans themselves stay, with their recipe, runs and recipe choices. Completed plans are not touched.");
+    consequences.push("Paste the hangar from the game afterwards; plans then pick up from what is really there.");
+    const confirmed = await confirm({ title: "Reset the hangar?", consequences, confirmLabel: "Reset hangar" });
+    if (confirmed) {
+      await action.run(resetHangar);
+    }
+  };
+
+  return (
+    <>
+      <button type="button" disabled={action.pending} onClick={() => void reset()}>
+        Reset hangar
+      </button>
+      <Failure action={action} />
+    </>
+  );
+}
+
 function describe(r: StockRefusal | ReservationRefusal): string {
   switch (r.kind) {
     case "notWholeNumber":
@@ -345,6 +400,12 @@ function describe(r: StockRefusal | ReservationRefusal): string {
       return `The plan "${r.plan}" no longer exists.`;
     case "notReserved":
       return `The plan "${r.plan}" no longer holds a reservation.`;
+    // Refusals of reserving, which is not offered here.
+    case "alreadyReserved":
+    case "planCompleted":
+    case "missing":
+    case "choicesNeeded":
+      return "The reservation could not be changed.";
   }
 }
 

@@ -2,9 +2,12 @@ import { useState } from "react";
 import { RECIPE_TYPES, type Recipe, type RecipeRef, type RecipeType } from "../../core/data/model";
 import { compareNames } from "../../core/data/names";
 import { deleteRecipe, deleteRecipeEffect, filterRecipes, type DeleteRecipeRefusal, type RecipeFilter } from "../../core/recipes/library";
-import { nextFormId, useAction, useAppData, useConfirm, type RecipesView } from "../context";
+import { plansChangedBy } from "../../core/recipes/planImpact";
+import { isRefusal } from "../../core/refusal";
+import { nextFormId, useAction, useAppData, useConfirm, useGoTo, type RecipesView } from "../context";
 import { Failure } from "../Failure";
 import { formatQuantity, recipeName } from "../format";
+import { changeConsequences, releaseConsequences } from "./planImpactText";
 import { RecipeForm } from "./RecipeForm";
 
 interface RecipesSectionProps {
@@ -22,13 +25,29 @@ export function RecipesSection({ view, onViewChange }: RecipesSectionProps) {
   const [type, setType] = useState<RecipeType | typeof ANY>(ANY);
   const [category, setCategory] = useState(ANY);
 
+  const goTo = useGoTo();
   const list = () => onViewChange({ kind: "list" });
   const form = (original?: RecipeRef) => onViewChange({ kind: "form", original, id: nextFormId() });
+  const newPlan = (target: RecipeRef) => goTo({ section: "plans", view: { kind: "new", target, id: nextFormId() } });
 
   if (view.kind === "form") {
+    // A form opened from a plan goes back to it, where the change shows straight away.
+    const close = () => {
+      list();
+      if (view.fromPlan) {
+        goTo("plans");
+      }
+    };
     return (
       <section aria-label="Recipes">
-        <RecipeForm key={view.id} original={view.original} onSaved={(again) => (again ? form() : list())} onCancel={list} />
+        <RecipeForm
+          key={view.id}
+          original={view.original}
+          product={view.product}
+          onSaved={(again) => (again ? form() : close())}
+          onCancel={close}
+          onNewPlan={newPlan}
+        />
       </section>
     );
   }
@@ -88,7 +107,7 @@ export function RecipesSection({ view, onViewChange }: RecipesSectionProps) {
           </thead>
           <tbody>
             {recipes.map((r) => (
-              <RecipeRow key={JSON.stringify([r.product, r.variant])} recipe={r} onOpen={form} />
+              <RecipeRow key={JSON.stringify([r.product, r.variant])} recipe={r} onOpen={form} onNewPlan={newPlan} />
             ))}
           </tbody>
         </table>
@@ -99,7 +118,7 @@ export function RecipesSection({ view, onViewChange }: RecipesSectionProps) {
   );
 }
 
-function RecipeRow({ recipe, onOpen }: { recipe: Recipe; onOpen: (recipe: RecipeRef) => void }) {
+function RecipeRow({ recipe, onOpen, onNewPlan }: { recipe: Recipe; onOpen: (recipe: RecipeRef) => void; onNewPlan: (recipe: RecipeRef) => void }) {
   const data = useAppData();
   const confirm = useConfirm();
   const action = useAction<DeleteRecipeRefusal>();
@@ -108,7 +127,14 @@ function RecipeRow({ recipe, onOpen }: { recipe: Recipe; onOpen: (recipe: Recipe
   const name = recipeName(ref);
 
   const remove = async () => {
+    // Refused straight away, without asking, when open plans build it.
+    const preview = deleteRecipe(data, ref);
+    if (isRefusal(preview)) {
+      setRefusal(preview.refused);
+      return;
+    }
     const { remaining } = deleteRecipeEffect(data, ref);
+    const affected = plansChangedBy(data, preview);
     const confirmed = await confirm({
       title: `Delete the recipe for ${name}?`,
       consequences: [
@@ -116,8 +142,15 @@ function RecipeRow({ recipe, onOpen }: { recipe: Recipe; onOpen: (recipe: Recipe
         remaining.length === 0
           ? `Nothing makes ${recipe.product} any more, so it becomes a base material: calculations list it to acquire instead of building it.`
           : `${recipe.product} can still be made with ${remaining.map(recipeName).join(", ")}.`,
+        ...changeConsequences(
+          affected,
+          remaining.length === 0
+            ? `Open plans that build ${recipe.product} along the way will have to acquire it instead`
+            : `Open plans using this recipe for ${recipe.product} will have to choose another`,
+        ),
+        ...releaseConsequences(affected),
       ],
-      confirmLabel: "Delete recipe",
+      confirmLabel: affected.some((p) => p.reserved) ? "Delete and release" : "Delete recipe",
     });
     if (!confirmed) {
       return;
@@ -139,6 +172,9 @@ function RecipeRow({ recipe, onOpen }: { recipe: Recipe; onOpen: (recipe: Recipe
         <td className="num">{formatQuantity(recipe.output)}</td>
         <td className="num">{recipe.inputs.size}</td>
         <td className="row-actions">
+          <button type="button" className="link" aria-label={`New plan for ${name}`} onClick={() => onNewPlan(ref)}>
+            New plan
+          </button>
           <button type="button" className="link" aria-label={`Delete ${name}`} disabled={action.pending} onClick={() => void remove()}>
             Delete
           </button>

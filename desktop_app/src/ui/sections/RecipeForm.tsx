@@ -5,10 +5,13 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { combineDuplicateInputs, saveRecipe, type RecipeDraft, type RecipeProblem } from "../../core/recipes/saveRecipe";
 import { RECIPE_TYPES, type AppData, type RecipeRef, type RecipeType } from "../../core/data/model";
-import { useAction, useAppData } from "../context";
+import { plansChangedBy } from "../../core/recipes/planImpact";
+import { isRefusal } from "../../core/refusal";
+import { useAction, useAppData, useConfirm } from "../context";
 import { Failure } from "../Failure";
-import { recipeName } from "../format";
+import { parseWhole, recipeName } from "../format";
 import { ItemField, type ItemFieldValue } from "../ItemField";
+import { changeConsequences, releaseConsequences } from "./planImpactText";
 
 interface Row {
   key: number;
@@ -35,18 +38,23 @@ interface FormState {
 interface RecipeFormProps {
   /** The recipe to edit; absent for a new one. */
   original?: RecipeRef;
+  /** For a new recipe: the product, already filled in ("create a recipe for this"). */
+  product?: string;
   /** After saving: `again` when the user asked for a fresh form to enter the next recipe. */
   onSaved: (again: boolean) => void;
   onCancel: () => void;
+  /** Starts a plan from the recipe being edited. */
+  onNewPlan: (recipe: RecipeRef) => void;
 }
 
-export function RecipeForm({ original, onSaved, onCancel }: RecipeFormProps) {
+export function RecipeForm({ original, product, onSaved, onCancel, onNewPlan }: RecipeFormProps) {
   const data = useAppData();
-  const [form, setForm] = useState<FormState>(() => initialState(data, original));
+  const [form, setForm] = useState<FormState>(() => initialState(data, original, product));
   const [problems, setProblems] = useState<RecipeProblem[]>([]);
   /** Shown once the save found the product's existing T2 recipe unlabelled. */
   const [existingLabel, setExistingLabel] = useState<string>();
   const action = useAction<RecipeProblem[]>();
+  const confirm = useConfirm();
 
   // There is always one empty row at the end to type the next input into.
   const update = (change: Partial<FormState>) =>
@@ -92,12 +100,39 @@ export function RecipeForm({ original, onSaved, onCancel }: RecipeFormProps) {
       notes: form.notes,
       inputs: usedRows.map((r) => ({ item: r.item.item!, quantity: parseWhole(r.quantity) })),
     };
-    const result = await action.run((d) => saveRecipe(d, draft, { original, existingLabel }));
-    if (result.status === "refused") {
-      setProblems(result.reason);
-      if (result.reason.some((p) => p.kind === "existingNeedsLabel")) {
+    const options = { original, existingLabel };
+    const refused = (reason: RecipeProblem[]) => {
+      setProblems(reason);
+      if (reason.some((p) => p.kind === "existingNeedsLabel")) {
         setExistingLabel((l) => l ?? "");
       }
+    };
+
+    // Open plans whose work the save changes are named first; a new recipe only asks when it releases a reservation.
+    const preview = saveRecipe(data, draft, options);
+    if (isRefusal(preview)) {
+      refused(preview.refused);
+      return;
+    }
+    const affected = plansChangedBy(data, preview);
+    if (original ? affected.length > 0 : affected.some((p) => p.reserved)) {
+      const releasing = affected.some((p) => p.reserved);
+      const confirmed = await confirm({
+        title: original ? `Save the changes to ${recipeName(original)}?` : `Save the recipe for ${draft.product}?`,
+        consequences: [
+          ...changeConsequences(affected, "Open plans using it change: their outstanding steps follow the new recipe, while steps already started or done stay as they are"),
+          ...releaseConsequences(affected),
+        ],
+        confirmLabel: releasing ? "Save and release" : "Save recipe",
+      });
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    const result = await action.run((d) => saveRecipe(d, draft, options));
+    if (result.status === "refused") {
+      refused(result.reason);
     } else if (result.status === "saved") {
       onSaved(again);
     }
@@ -261,6 +296,11 @@ export function RecipeForm({ original, onSaved, onCancel }: RecipeFormProps) {
         <button type="button" onClick={onCancel}>
           Cancel
         </button>
+        {original && data.recipes.some((r) => r.product === original.product && r.variant === original.variant) && (
+          <button type="button" onClick={() => onNewPlan(original)}>
+            New plan from this recipe
+          </button>
+        )}
         {unresolved.size > 0 && (form.product.text !== "" || usedRows.length > 0) && (
           <span className="muted">
             {unresolved.has("product") && form.product.text === ""
@@ -334,10 +374,19 @@ function describe(p: RecipeProblem): ReactNode {
   }
 }
 
-function initialState(data: AppData, original: RecipeRef | undefined): FormState {
+function initialState(data: AppData, original: RecipeRef | undefined, product: string | undefined): FormState {
   const recipe = original && data.recipes.find((r) => r.product === original.product && r.variant === original.variant);
   if (!recipe) {
-    return { product: { text: "" }, type: "T1 Manufacturing", variant: "", output: "1", notes: "", rows: [newRow()] };
+    // A product with recipes already takes their type, as when it is chosen in the form.
+    const sibling = product === undefined ? undefined : data.recipes.find((r) => r.product === product);
+    return {
+      product: product === undefined ? { text: "" } : { text: product, item: product },
+      type: sibling?.type ?? "T1 Manufacturing",
+      variant: "",
+      output: "1",
+      notes: "",
+      rows: [newRow()],
+    };
   }
   return {
     product: { text: recipe.product, item: recipe.product },
@@ -357,10 +406,4 @@ function existingNeeded(data: AppData, form: FormState): RecipeRef | undefined {
 
 function isBlank(row: Row | undefined): boolean {
   return row !== undefined && row.item.text.trim() === "" && row.quantity.trim() === "";
-}
-
-/** "10,000" or "10000" as 10000; anything else as NaN, which the save reports at the field. */
-function parseWhole(text: string): number {
-  const compact = text.replace(/[\s,]/g, "");
-  return /^\d+$/.test(compact) ? Number(compact) : Number.NaN;
 }

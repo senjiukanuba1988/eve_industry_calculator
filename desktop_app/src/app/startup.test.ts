@@ -39,6 +39,29 @@ function expectKind<K extends StartupResult["kind"]>(result: StartupResult, kind
   return result as Extract<StartupResult, { kind: K }>;
 }
 
+describe("removing completed plans", () => {
+  // The fixture's completed plan was completed 2026-10-03T18:20:00+02:00.
+  it("removes a plan completed more than seven days ago, in one commit that leaves the hangar alone", async () => {
+    const fs = fixtureFolder();
+    const before = fs.snapshot();
+    const later = new Date("2026-10-10T19:20:00+02:00");
+    const result = expectKind(await startUp(fs, { ...OPTIONS, now: () => later }), "ready");
+    expect(result.data.plans.map((p) => p.name)).toEqual(["80 Flycatchers"]);
+    const after = fs.snapshot();
+    expect(after["hangar.json"]).toBe(before["hangar.json"]);
+    expect(after["plans.json"]).not.toContain("30 Acolyte II");
+    expect(JSON.parse(after["manifest.json"]!)).toMatchObject({ writtenBy: "1.0.0" });
+  });
+
+  it("keeps a plan completed less than seven days ago and writes nothing", async () => {
+    const fs = fixtureFolder();
+    const before = fs.snapshot();
+    const result = expectKind(await startUp(fs, { ...OPTIONS, now: () => new Date("2026-10-10T17:20:00+02:00") }), "ready");
+    expect(result.data.plans).toHaveLength(2);
+    expect(fs.snapshot()).toEqual(before);
+  });
+});
+
 describe("first start", () => {
   it("creates the folder with empty data files, and starts without a message", async () => {
     const fs = new MemoryFileSystem();
@@ -81,6 +104,30 @@ describe("data in the current format", () => {
     const result = expectKind(await startUp(fs, OPTIONS), "ready");
     expect(result.data.hangar.stock.get("Tritanium")).toBe(5);
     expect(Object.keys(fs.snapshot())).not.toContain("commit.json");
+  });
+});
+
+describe("the folder is the data", () => {
+  it("a valid edit: a quantity corrected by hand while closed is used on the next start", async () => {
+    const fs = fixtureFolder();
+    await fs.writeText("hangar.json", fs.snapshot()["hangar.json"]!.replace('"Tritanium": 1000000', '"Tritanium": 750000'));
+    const result = expectKind(await startUp(fs, OPTIONS), "ready");
+    expect(result.data.hangar.stock.get("Tritanium")).toBe(750000);
+  });
+
+  it("backing up by copying: a copy of the folder, put back later, starts with exactly what it held", async () => {
+    const fs = fixtureFolder();
+    const original = expectKind(await startUp(fs, OPTIONS), "ready").data;
+    const copy = fs.snapshot();
+
+    // Work goes on after the copy was taken...
+    await fs.writeText("hangar.json", copy["hangar.json"]!.replace('"Tritanium": 1000000', '"Tritanium": 1'));
+    await fs.writeText("plans.json", JSON.stringify({ plans: [] }, null, 2) + "\n");
+    expect(expectKind(await startUp(fs, OPTIONS), "ready").data.plans).toEqual([]);
+
+    // ...and putting the copy back, here or on another machine, restores everything.
+    const restored = expectKind(await startUp(MemoryFileSystem.withFiles(copy), OPTIONS), "ready").data;
+    expect(restored).toEqual(original);
   });
 });
 
@@ -180,6 +227,22 @@ describe("data in an older format", () => {
     const now = topLevel(fs);
     expect(Object.keys(now)).toEqual(["hangar.json", "items.json", "manifest.json", "plans.json", "recipes.json"]);
     expect(JSON.parse(now["manifest.json"]!)).toMatchObject({ formatVersion: 2, writtenBy: "2.0.0" });
+  });
+
+  it("going back: the backup is a complete folder in the old format, which starts like the original", async () => {
+    const fs = olderFolder();
+    const converted = expectKind(await startUp(fs, CONVERTING), "ready").data;
+    const prefix = "backups/format 1 to 2 - 2026-10-04 16-32/";
+    const backup = Object.fromEntries(
+      Object.entries(fs.snapshot())
+        .filter(([p]) => p.startsWith(prefix))
+        .map(([p, text]) => [p.slice(prefix.length), text]),
+    );
+
+    // Restored on its own, it is the old data again: starting it converts to the same result.
+    const restored = MemoryFileSystem.withFiles(backup);
+    expect(JSON.parse(backup["manifest.json"]!)).toMatchObject({ formatVersion: 1, writtenBy: "0.9.0" });
+    expect(expectKind(await startUp(restored, CONVERTING), "ready").data).toEqual(converted);
   });
 
   it("shows the message once: the next start is silent and makes no second backup", async () => {

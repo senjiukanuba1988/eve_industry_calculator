@@ -184,10 +184,11 @@
       "id": 19,
       "title": "Recipes section list",
       "description": "List recipes with product, variant label, type and output per run; filter by type and by product category; search by part of the product name. Open a recipe in the form. Delete a recipe no plan uses (deleting one that plans use is task 30).\n\nTesting: automated - domain tests for the filters and search; a component test for delete with confirmation. Manual (user) - a quick look at the list.",
-      "status": "in_progress",
+      "status": "done",
       "priority": "high",
       "created": "2026-10-04",
-      "notes": "Built 2026-10-05, awaiting the user's quick look. core/recipes/library.ts: filterRecipes (type, product category or null for none, search on part of the product name ignoring case; sorted by product then variant), deleteRecipeEffect (the product's remaining recipes; none = becomes a base material), deleteRecipe (refused while an incomplete plan targets it, naming the plans). Recipes section: New recipe, search, type and category filters (a category deleted while selected falls back to All), table Product (opens the form) / Variant / Type / Output per run / Inputs / Delete. Delete asks for confirmation naming the recipe and stating whether the product becomes a base material or which variants remain; refusals shown in the row. Deleting a recipe plans only use as an intermediate (naming them, releasing reservations) is task 30 - needs the calculation engine. RecipeTable.onOpen is kept for the Plans landing page (task 24). 10 domain + 5 component tests; 323 Vitest, lint + clippy clean."
+      "notes": "Built 2026-10-05, awaiting the user's quick look. core/recipes/library.ts: filterRecipes (type, product category or null for none, search on part of the product name ignoring case; sorted by product then variant), deleteRecipeEffect (the product's remaining recipes; none = becomes a base material), deleteRecipe (refused while an incomplete plan targets it, naming the plans). Recipes section: New recipe, search, type and category filters (a category deleted while selected falls back to All), table Product (opens the form) / Variant / Type / Output per run / Inputs / Delete. Delete asks for confirmation naming the recipe and stating whether the product becomes a base material or which variants remain; refusals shown in the row. Deleting a recipe plans only use as an intermediate (naming them, releasing reservations) is task 30 - needs the calculation engine. RecipeTable.onOpen is kept for the Plans landing page (task 24). 10 domain + 5 component tests; 323 Vitest, lint + clippy clean. User checked 2026-10-06: list, create, edit, delete with confirmation all work.",
+      "completed_at": "2026-10-06"
     },
     {
       "id": 20,
@@ -233,84 +234,102 @@
       "id": 24,
       "title": "Creating and managing plans",
       "description": "Create a plan from a target recipe (choosing the variant where there are several) and a run count, with a suggested name such as '80 Flycatchers'; the target and runs are fixed after creation. Rename. Plans list showing open plans by default, with completed plans available separately. Delete with confirmation: the reserved pile returns to stock, consumed inputs stay spent, produced output stays.\n\nTesting: automated - domain tests for creation, the name suggestion, rename, and deleting a reserved plan with started and done steps (the production-plans scenario). Manual (user) - creating a plan from the UI.",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
-      "created": "2026-10-04"
+      "created": "2026-10-04",
+      "notes": "Built 2026-10-06, awaiting the user's manual check (create a plan from the UI). User decisions 2026-10-06: plan names need NOT be unique (plans stay addressed by PlanAt = list index guarded by name); the suggested name is the OUTPUT quantity plus product, no plural (\"80 Flycatcher\", \"50,000 Tungsten Carbide\"). core/plans/plans.ts: PlanAt + planAt (moved from reservations.ts, which re-exports it), suggestPlanName, createPlan (recipe must exist, whole runs >= 1, trimmed non-empty name; created = injected Timestamp), renamePlan, deletePlan (pile back to general stock; started inputs stay spent, done output stays), setVariantChoice (releases a reserved plan's pile - the confirmation is in the UI), calculatePlan (reserved pile or general stock), variantOptions, removalDate (+7 days by the plan's own calendar date), addTo. core/data/timestamp.ts: toTimestamp(Date). ui/context.ts: PlansView (list{completed?} | new{target?,id} | plan{at}), Destination {section:\"plans\", view}, ClockContext/useNow (tests inject a fixed time). Shell owns plansView, so the open plan survives switching sections. Plans section: New plan, Open (n) / Completed (n) toggle, table with name (opens plan), Delete per row (confirmation lists reserved materials and what stays spent/stays in hangar); completed list shows Completed + Removed on. NewPlanForm: pick recipe from searchable RecipeTable (each variant a row), then Runs (accepts 1,000; shows what it makes) and Name (follows the suggestion until typed in). ui/format.ts gained parseWhole (RecipeForm uses it now). Domain tests in core/plans/plans.test.ts. User checked 2026-10-06: fine.",
+      "completed_at": "2026-10-06"
     },
     {
       "id": 25,
       "title": "Plan view",
       "description": "The checklist: Acquire entries first (not tickable), Build entries in dependency order with the target last, showing recipe, runs, output and leftover; done steps in a collapsed section; the 'which variant?' prompt, visible variant choices that can be changed, and flagged invalid choices; created/started/done/completed times; the removal date on completed plans; the per-step and per-material 'why' view from task 21. Recalculates continuously, with no recalculate button.\n\nTesting: automated - component tests for entry ordering, the collapsed done section, the variant prompt, and Acquire entries disappearing when stock arrives. Manual (user) - work through a real plan and judge readability and density.",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
-      "created": "2026-10-04"
+      "created": "2026-10-04",
+      "notes": "Built 2026-10-06 together with #24, awaiting the user's manual check (readability and density - working through a plan needs #26). ui/sections/PlanView.tsx: back link, name with inline Rename (Enter saves, Escape cancels), meta line (Builds recipe: runs = output, Created, Completed + removed on / reserved state, Delete plan). Incomplete plans: variant prompt panel per choicesNeeded (buttons per label, invalid remembered choice flagged), checklist table Step / Item / Recipe / Runs / Quantity / Leftover / Status - Acquire rows first (status missing), builds in engine order with target last (\"Build target\"), started steps show start time and shortfall. Clicking an item toggles a why row from ItemTrace (needed and by whom, from hangar or reserved pile, on its way, runs x output = produced, leftover, inputs); started steps explain their recorded figures and what was deducted. Recipe choices table (select per product with several recipes; reserved plan -> confirmation that the reservation is released). Completed steps in a <details> collapsed (open by default on completed plans) with started/done times. No recalculate button - computed on every render. 17 component tests in ui/sections/PlansSection.test.tsx (UI tests need MemoryFileSystem.withFiles({}), not new MemoryFileSystem(), or saves fail with folder \"\" does not exist). 433 Vitest, lint + clippy clean. CHANGED 2026-10-06 after user feedback: the item name looked like a link to the recipe, so the user never found the explanation behind it. Item names in the checklist are now plain text (task 31 may turn them into links to the recipe); a Details / Hide details button in a last column toggles the detail row instead. For build steps it starts with a Materials table: Material / Per run / Total (n runs) / In hangar now (or In reserved pile now) - for a started step Taken (what was deducted) - followed by the explanation. User wanted this to see what to put into e.g. 710 Robotics production cycles. User checked 2026-10-06: fine.",
+      "completed_at": "2026-10-06"
     },
     {
       "id": 26,
       "title": "Step transitions",
       "description": "Start (deduct inputs from the reserved pile or general stock, record the snapshot and the start time, warn on shortfall listing items and amounts, clamp at zero, record the shortfall). Done (add output: all to general stock if unreserved; up to the plan's need into the pile and the batch surplus to general stock if reserved). Done without starting (offer to deduct and record output in one action, or record output only). Revert done to started and started to not started, returning exactly what was moved, clamping at zero and recording what could not be removed. Every transition is a single atomic commit.\n\nTesting: automated - every step scenario in production-plans (starting a reaction, a reserved start, starting short, declining the warning, batch surplus, completing without starting, all revert cases, a recipe edited while a step is started).",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
-      "created": "2026-10-04"
+      "created": "2026-10-04",
+      "notes": "Built 2026-10-06, awaiting the user's manual check (work through a real plan). User decision 2026-10-06: undoing a step that was marked done WITHOUT being started goes straight back to not started (step removed, deducted inputs returned, output removed; anything not removable is only warned about, since the step is gone) - data-files.md only covered done -> started. core/plans/steps.ts: EntryRef (product/variant/runs as shown; acting refuses entryChanged if the recalculated checklist no longer has it), StepRef (index guarded by product+state), startShortfall (preview, changes nothing), startStep (deducts from pile if reserved else general, clamps, records deducted/short/started and the recipe figures), completeStep (reserved: output into the pile up to trace.onItsWay of the product - i.e. what the plan still needs beyond its pile - rest to general; target output all to pile; unreserved: all general), completeDirectly (virtual start with or without deducting, complete, then drop the start time), revertShortfall (preview of output that can no longer be removed), revertStep (done -> started: remove addedToReserved from the pile if still reserved else general, addedToGeneral from general, clamp, notRemoved recorded; started -> not started: deducted back to pile if takenFrom reserved and still reserved, else general; step removed). Completing a plan (part of task 28) is in complete(): when the done target runs reach plan.runs with no target step still started, completed = now and the whole pile goes to general stock. Steps of a completed plan refuse with planCompleted. UI: ConfirmDialog gained a second option (useChoose / ChoiceRequest.alternativeLabel); ui/sections/stepActions.ts useStepActions(at); checklist rows: not started -> Start / Done, started -> Done / Undo start, plus Details; started rows show shortfall and notRemoved; done section rows have Undo done (or Undo for directly-done steps), hidden on completed plans. Start short -> Start anyway dialog listing the shortfall; Done without start -> Deduct inputs and add output / Add output only; Undo of spent output -> Undo anyway. 23 domain tests (each outcome also serialised and loaded again) + 6 component tests. 463 Vitest, lint + clippy clean. User checked 2026-10-06: everything works.",
+      "completed_at": "2026-10-06"
     },
     {
       "id": 27,
       "title": "Reservations",
       "description": "Reserve only when nothing is left to acquire (otherwise list what is missing and by how much); move the exact quantities needed, intermediates included, into the plan's pile; a reserved plan draws only on its pile; other plans and the hangar see only general stock. Release returns the whole pile. Changing a variant choice on a reserved plan warns, then releases.\n\nTesting: automated - every reservation scenario in production-plans, including reserving across tiers, another plan seeing less, components counting towards the reservation, releasing mid-project, and the variant-change release.",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
-      "created": "2026-10-04"
+      "created": "2026-10-04",
+      "completed_at": "2026-10-06",
+      "notes": "Done 2026-10-06 (automated testing only, per the task). core/plans/reservations.ts: reservePlan - refuses planCompleted / alreadyReserved / choicesNeeded (products) / missing (the acquire list, item + quantity); otherwise moves exactly calculatePlan(...).fromAvailable (intermediates included) from general stock into the pile. releaseReservation unchanged (now uses planAt/addTo from plans.ts). The variant-change release was done in task 24/25 (setVariantChoice + confirmation). Plan view meta line: Not reserved [Reserve materials] / Materials reserved [Release]; refusals in place (Cannot reserve yet - still to acquire: ...; Choose a recipe for X first.); collapsed Reserved materials (n) section; the Details materials column reads In reserved pile now for reserved plans (a test caught it reading In plan's reserved pile now). 10 domain tests (every reservation scenario incl. across tiers, components counting, another plan seeing less / taking the material, draws only on its pile, releasing mid-project) + 1 component test."
     },
     {
       "id": 28,
       "title": "Finishing plans and seven-day removal",
       "description": "A plan completes exactly when its final build step is marked done: the completion time is recorded and the whole pile, finished product included, goes to general stock. Holding the target product in stock never completes a plan. On every start, plans completed more than seven days ago are removed in one commit, with the hangar untouched; completed plans show their removal date.\n\nTesting: automated - the finishing-a-plan scenarios; removal at 6 days 23 hours (kept) vs 7 days 1 hour (removed) using an injected clock; removal does not happen mid-session.",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
-      "created": "2026-10-04"
+      "created": "2026-10-04",
+      "notes": "Partly done with task 26 (2026-10-06): completion on marking the last target step done, completion time, pile (product included) back to general stock, completed plans read-only, removal date shown in the list and plan view (removalDate in core/plans/plans.ts). Still open: removal of plans completed more than seven days ago on every start (one commit, hangar untouched, injected clock), and its tests. Rest done 2026-10-06: core/plans/retention.ts removeExpiredPlans(data, now: Date) - more than 7 x 24 h between instants (Date parses the stored offset); returns the same object when nothing expires. app/startup.ts runs it after every ready start (equal format or after a conversion) and, only if something was removed, commits plans.json + manifest.json (writtenBy brought up to date) before anything is shown. Removal never happens mid-session because only startUp calls it. Tests: 6d23h kept / 7d1h removed / offsets compared as instants; start-up removes in one commit leaving hangar.json byte-identical, and writes nothing when nothing expires.",
+      "completed_at": "2026-10-06"
     },
     {
       "id": 29,
       "title": "Hangar reset",
       "description": "Reset clears all stock, releases every reservation, and clears started and done steps (and their times) of incomplete plans; completed plans are untouched. Never refused; the confirmation states exactly what will be lost.\n\nTesting: automated - the hangar reset scenarios, including completed plans untouched and picking a plan back up after a reset and fresh paste. Manual (user) - read the confirmation text.",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
-      "created": "2026-10-04"
+      "created": "2026-10-04",
+      "notes": "Built 2026-10-06, awaiting the user's manual check (read the confirmation text). core/hangar/reset.ts: resetEffect (stock item count, reserved open plans, open plans with started/done counts) and resetHangar (stock cleared, every open plan's reservation dropped - the pile is cleared, not returned, since the hangar ends up empty anyway - and its steps cleared with their times; name/target/runs/variantChoices kept; completed plans untouched, same object). Never refused. Hangar toolbar: Reset hangar button; confirmation lists items cleared, reservations released (plan names), step progress cleared per plan (n started, n done), that plans and completed plans stay, and to paste from the game afterwards. 4 domain tests (incl. picking a plan back up after reset + fresh paste) + 1 component test. 484 Vitest, lint + clippy clean. User checked the confirmation text 2026-10-12: OK.",
+      "completed_at": "2026-10-12"
     },
     {
       "id": 30,
       "title": "Recipe changes that affect plans",
       "description": "Saving an edited recipe used by incomplete plans names them and asks for confirmation; reserved ones are named as being released. Deleting a recipe targeted by an incomplete plan is refused, naming the plans. Deleting a recipe used as an intermediate states the consequence (becomes a base material, or another variant must be chosen) and releases reservations. Adding a second T2 variant writes explicit variant choices into the plans that were implicitly using the first one, in the same commit.\n\nTesting: automated - every 'changing a recipe that plans depend on' scenario, plus 'a second variant is added later' and 'a remembered choice becomes invalid' from material-calculation.",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
-      "created": "2026-10-04"
+      "created": "2026-10-04",
+      "completed_at": "2026-10-12",
+      "notes": "Built 2026-10-12. User chose: a plan counts as affected only when its outstanding work changes (acquire, build steps/runs/inputs ignoring order and labels, choices needed, what it draws from available) - not merely when the recipe is somewhere in its tree. core/recipes/planImpact.ts: plansChangedBy(before, after) recalculates each incomplete plan both ways; releaseChanged releases affected reserved plans; planReaches walks the recipe tree structurally (stock-independent). saveRecipe and deleteRecipe now release affected reservations in the same commit; saveRecipe writes the existing recipe's label as an explicit variant choice into incomplete plans that reached the product through its only recipe when a second variant is added (also when the existing one is labelled in the same save; also when stock currently covers it). Deleting a chosen variant keeps the stale choice so the plan asks again. UI: recipe form previews the save - an edit asks when any plan changes, a new recipe only when it would release a reservation; confirm label Save recipe / Save and release. Delete: refused immediately (no dialog) when targeted; otherwise dialog adds the plan consequence (acquire instead / choose another) and release text, label Delete and release when releasing. Tests: planImpact.test.ts (17), RecipeChanges.test.tsx (5)."
     },
     {
       "id": 31,
       "title": "Jumping between related things",
       "description": "Direct links from a recipe to a new plan for it, from a plan step to its recipe, and from a material to its hangar stock, plus 'create a recipe for this' on any base material shown in a plan (item-catalog: missing recipes are visible).\n\nTesting: automated - component tests that each link opens the right section and object. Manual (user) - whether the links are where you would reach for them.",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
-      "created": "2026-10-04"
+      "created": "2026-10-04",
+      "notes": "Built 2026-10-12, awaiting the user's manual check (are the links where you would reach for them). Recipes list row action New plan; recipe form button New plan from this recipe (both open the new-plan form with the target chosen). Plan checklist: item names (Acquire and Build rows, and materials in a build step's Details) link to the Hangar, which then shows only that item with its reserved-by breakdown opened, until the search is edited; Recipe column links to the recipe (variant label, or view) - plain text if the recipe is gone; Acquire rows have Create recipe (new recipe form with the product filled in, type taken from sibling recipes). Recipe forms opened from a plan return to Plans on save/cancel. Tests: Jumps.test.tsx (6). User checked the links 2026-10-12: OK.",
+      "completed_at": "2026-10-12"
     },
     {
       "id": 32,
       "title": "Windows installer and versioning",
       "description": "Build a Windows installer with Tauri's bundler. App icon. The version shown in the app matches manifest writtenBy. The uninstaller leaves Documents\\EVE Industry Calculator alone and says where it is. Document the release steps (bump the version; bump formatVersion and add a conversion step if any file's shape changed).\n\nTesting: automated - the build succeeds and produces an installer. Manual (user) - install, use, install a newer build over it and check the data is intact, uninstall and check the folder remains and the message appears.",
-      "status": "todo",
+      "status": "in_progress",
       "priority": "high",
-      "created": "2026-10-04"
+      "created": "2026-10-04",
+      "notes": "Built 2026-10-12, awaiting the user's manual install / upgrade / uninstall test. App icon: amber gear around a hexagon on dark navy, drawn in desktop_app/app-icon.svg, generated with npx tauri icon (android/ios sets deleted). tauri.conf.json bundle.windows.nsis: installMode currentUser, installerIcon, installerHooks windows/hooks.nsh. hooks.nsh NSIS_HOOK_POSTUNINSTALL: unless /UPDATE (the old uninstaller run while installing a newer build) or silent, if $DOCUMENTSEVE Industry Calculator exists, a message box says the data was not deleted and where it is. Tauri's own Delete the application data checkbox only clears AppData (WebView cache). Version: already single-sourced (package.json -> tauri.conf, Vite define APP_VERSION -> sidebar, Data folder section, manifest writtenBy). Release steps documented in desktop_app/README.md (Releasing). npm run build succeeds; test installers 0.1.0 and 0.1.1 built side by side in src-tauri/target/release/bundle/nsis/ (package.json left at 0.1.0)."
     },
     {
       "id": 33,
       "title": "Acceptance pass against the specification",
       "description": "Walk every scenario in openspec/specs/ against the finished app. List each as covered by an automated test, checked manually, or a gap; fix the gaps. Then the user re-enters their real recipe data and works a real plan.\n\nTesting: this task is the testing - Claude produces the scenario-by-scenario checklist and the user does the manual items on it.",
-      "status": "todo",
+      "status": "in_progress",
       "priority": "high",
-      "created": "2026-10-04"
+      "created": "2026-10-04",
+      "notes": "Automated part done 2026-10-12; awaiting the user's manual items and real-data run. Four parallel audits mapped all 140 scenarios to tests (initially 118 AUTO, 16 PARTIAL, 3 GAP, 5 MANUAL; no behaviour bugs except below). Fixed: (1) spec conflict - fully covered base materials vanished from the plan view; user chose a collapsed Covered materials section below the checklist (PlanView.tsx), production-plans spec updated; (2) the start-up error screen showed the data folder without the edit-while-closed note - added, worded for that screen (editing is safe while nothing is loaded). Spec example corrected to \"80 Flycatcher\" (earlier user decision). Added tests for every PARTIAL/GAP (steps, planImpact, reset, PlansSection, CatalogFlow, RecipeChanges, startup, Startup, Rust hooks.nsh folder-name sync). 532 Vitest + 17 cargo, lint clean. Checklist with manual items: acceptance.md in this goal directory."
     }
   ],
   "next_session_suggestions": [
-    "Work out where the next point for manual testing by the user is (likely after task 25, when a plan and its checklist can be seen), then work through the tasks in order up to that point. Task 19 is still open pending the user's quick look at the recipe list filters and delete."
+    "Manual testing: the #32 installer test (install 0.1.0, install 0.1.1 over it, uninstall; installers in desktop_app/src-tauri/target/release/bundle/nsis/, using the real DocumentsEVE Industry Calculator folder; judge the icon), then the #33 manual checklist at the top of acceptance.md, ending with re-entering the real recipes and working one real plan end to end. Fix whatever turns up; when both pass, the goal is complete."
   ]
 }

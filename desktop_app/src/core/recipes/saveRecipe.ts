@@ -7,6 +7,7 @@ import type { AppData, Plan, Recipe, RecipeRef, RecipeType } from "../data/model
 import { nameKey } from "../data/names";
 import { findCycles } from "../data/validate";
 import { refuse, type Refusal } from "../refusal";
+import { planReaches, releaseChanged } from "./planImpact";
 
 /** What the form holds when the user saves. Item names are bound to catalog items by the form. */
 export interface RecipeDraft {
@@ -165,6 +166,17 @@ export function saveRecipe(data: AppData, draft: RecipeDraft, options: SaveRecip
     return refuse(problems);
   }
 
+  // Plans that reach the product through its one recipe keep using it once this second
+  // variant exists, as though they had chosen it (worked out before anything is relabelled).
+  const implicitUsers =
+    siblings.length === 1
+      ? new Set(
+          data.plans.filter(
+            (p) => p.completed === undefined && !p.variantChoices.has(draft.product) && planReaches(data.recipes, p, draft.product),
+          ),
+        )
+      : new Set<Plan>();
+
   // Keep everything that names a recipe by its label pointing at the same recipe.
   let plans = data.plans;
   let recipes = others;
@@ -176,7 +188,14 @@ export function saveRecipe(data: AppData, draft: RecipeDraft, options: SaveRecip
   if (original && original.product === recipe.product && original.variant !== recipe.variant) {
     plans = plans.map((p) => retarget(p, original, recipe.variant));
   }
-  return { ...data, recipes: [...recipes, recipe], plans };
+  if (implicitUsers.size > 0) {
+    const label = existingLabel?.label ?? siblings[0]!.variant!;
+    plans = plans.map((p, i) =>
+      implicitUsers.has(data.plans[i]!) ? { ...p, variantChoices: new Map(p.variantChoices).set(draft.product, label) } : p,
+    );
+  }
+  // Plans whose work the change alters and that had reserved their materials are released.
+  return releaseChanged(data, { ...data, recipes: [...recipes, recipe], plans });
 }
 
 /**

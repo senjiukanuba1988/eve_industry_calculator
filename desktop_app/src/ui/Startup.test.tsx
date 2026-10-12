@@ -46,6 +46,19 @@ describe("Startup", () => {
     expect(screen.getByText("C:\\Users\\me\\Documents\\EVE Industry Calculator")).toBeInTheDocument();
   });
 
+  it("says when the files may be edited, beside the data folder", async () => {
+    renderWith({ kind: "malformed", errors: [{ file: "items.json", line: 3, message: "x" }] });
+    expect(await screen.findByText(/Nothing is loaded yet, so the files can safely be edited now. Once EVE Industry Calculator has started, edit them only while it is closed/)).toBeInTheDocument();
+  });
+
+  it("explains data that could not be opened at all, offering the folder and another try", async () => {
+    renderWith({ kind: "failed", message: "commit.json could not be read." });
+    expect(await screen.findByRole("heading", { name: "Your data could not be opened" })).toBeInTheDocument();
+    expect(screen.getByText("commit.json could not be read.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Open data folder" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /try again/i })).toBeInTheDocument();
+  });
+
   it("tries again, and starts once the data has been fixed", async () => {
     const { start } = renderWith(
       { kind: "malformed", errors: [{ file: "items.json", line: 3, message: "x" }] },

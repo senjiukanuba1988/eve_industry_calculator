@@ -22,3 +22,16 @@ export function isTimestamp(text: string): text is Timestamp {
     offsetMinutes! <= 59
   );
 }
+
+/** A moment as a stored time: the local time where it happened, with that place's UTC offset, to the second. */
+export function toTimestamp(date: Date): Timestamp {
+  const two = (n: number) => String(n).padStart(2, "0");
+  const offset = -date.getTimezoneOffset();
+  const sign = offset < 0 ? "-" : "+";
+  const abs = Math.abs(offset);
+  return (
+    `${date.getFullYear()}-${two(date.getMonth() + 1)}-${two(date.getDate())}` +
+    `T${two(date.getHours())}:${two(date.getMinutes())}:${two(date.getSeconds())}` +
+    `${sign}${two(Math.floor(abs / 60))}:${two(abs % 60)}`
+  );
+}

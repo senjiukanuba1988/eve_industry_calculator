@@ -118,6 +118,10 @@ function StartupError({ title, folder, onOpenFolder, retry, children }: StartupE
       <p className="data-folder-path">
         Data folder: <code>{folder.path}</code>
       </p>
+      <p className="warning">
+        Nothing is loaded yet, so the files can safely be edited now. Once {APP_NAME} has started, edit them only while it is closed: changes
+        made while it is running are not seen by it, and its next save overwrites them.
+      </p>
       <div className="actions">
         <button type="button" onClick={onOpenFolder}>
           Open data folder

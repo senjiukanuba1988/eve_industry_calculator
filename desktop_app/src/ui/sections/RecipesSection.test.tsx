@@ -78,13 +78,13 @@ describe("RecipesSection", () => {
     expect(store.current.recipes).toHaveLength(before);
   });
 
-  it("refuses to delete a recipe an open plan builds, naming the plan, in the row", async () => {
+  it("refuses to delete a recipe an open plan builds, naming the plan, in the row, without asking first", async () => {
     const { store } = renderRecipes();
     const target = store.current.plans.find((p) => p.completed === undefined)!.target;
     const name = target.variant ? `${target.product} (${target.variant})` : target.product;
     await showRecipes();
     await userEvent.click(screen.getByRole("button", { name: `Delete ${name}` }));
-    await userEvent.click(screen.getByRole("button", { name: "Delete recipe" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(/Open plans build this recipe \(.+\)\. Complete or delete them first\./);
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
   });
 });
